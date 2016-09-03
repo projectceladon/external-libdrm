@@ -36,7 +36,6 @@
 #include <errno.h>
 #include <drm.h>
 #include <i915_drm.h>
-#include <pciaccess.h>
 #include "libdrm_macros.h"
 #include "intel_bufmgr.h"
 #include "intel_bufmgr_priv.h"
@@ -329,6 +328,10 @@ drm_intel_get_pipe_from_crtc_id(drm_intel_bufmgr *bufmgr, int crtc_id)
 static size_t
 drm_intel_probe_agp_aperture_size(int fd)
 {
+#ifdef ANDROID
+	/* Android does not have libpciaccess. */
+	return 64 * 1024 * 1024;
+#else
 	struct pci_device *pci_dev;
 	size_t size = 0;
 	int ret;
@@ -350,6 +353,7 @@ drm_intel_probe_agp_aperture_size(int fd)
 err:
 	pci_system_cleanup ();
 	return size;
+#endif
 }
 
 int
