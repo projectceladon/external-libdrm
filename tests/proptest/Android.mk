@@ -4,6 +4,8 @@ include $(CLEAR_VARS)
 include $(LOCAL_PATH)/Makefile.sources
 
 LOCAL_SRC_FILES := $(PROPTEST_FILES)
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/..
 
 LOCAL_MODULE := proptest
 
