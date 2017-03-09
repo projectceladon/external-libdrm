@@ -36,6 +36,9 @@
 #include <errno.h>
 #include <drm.h>
 #include <i915_drm.h>
+#ifndef ANDROID
+#include <pciaccess.h>
+#endif
 #include "libdrm_macros.h"
 #include "intel_bufmgr.h"
 #include "intel_bufmgr_priv.h"
