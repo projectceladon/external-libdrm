@@ -1382,22 +1382,23 @@ static void drm_intel_gem_bo_unreference(drm_intel_bo *bo)
 
 	assert(atomic_read(&bo_gem->refcount) > 0);
 
-	if (atomic_add_unless(&bo_gem->refcount, -1, 1)) {
-		drm_intel_bufmgr_gem *bufmgr_gem =
-		    (drm_intel_bufmgr_gem *) bo->bufmgr;
-		struct timespec time;
+	if (atomic_add_unless(&bo_gem->refcount, -1, 1))
+		return;
 
-		clock_gettime(CLOCK_MONOTONIC, &time);
+	drm_intel_bufmgr_gem *bufmgr_gem =
+		(drm_intel_bufmgr_gem *) bo->bufmgr;
+	struct timespec time;
 
-		pthread_mutex_lock(&bufmgr_gem->lock);
+	clock_gettime(CLOCK_MONOTONIC, &time);
 
-		if (atomic_dec_and_test(&bo_gem->refcount)) {
-			drm_intel_gem_bo_unreference_final(bo, time.tv_sec);
-			drm_intel_gem_cleanup_bo_cache(bufmgr_gem, time.tv_sec);
-		}
+	pthread_mutex_lock(&bufmgr_gem->lock);
 
-		pthread_mutex_unlock(&bufmgr_gem->lock);
+	if (atomic_dec_and_test(&bo_gem->refcount)) {
+		drm_intel_gem_bo_unreference_final(bo, time.tv_sec);
+		drm_intel_gem_cleanup_bo_cache(bufmgr_gem, time.tv_sec);
 	}
+
+	pthread_mutex_unlock(&bufmgr_gem->lock);
 }
 
 static int drm_intel_gem_bo_map(drm_intel_bo *bo, int write_enable)
@@ -3377,16 +3378,17 @@ drm_intel_bufmgr_gem_unref(drm_intel_bufmgr *bufmgr)
 {
 	drm_intel_bufmgr_gem *bufmgr_gem = (drm_intel_bufmgr_gem *)bufmgr;
 
-	if (atomic_add_unless(&bufmgr_gem->refcount, -1, 1)) {
-		pthread_mutex_lock(&bufmgr_list_mutex);
+	if (atomic_add_unless(&bufmgr_gem->refcount, -1, 1))
+		return;
 
-		if (atomic_dec_and_test(&bufmgr_gem->refcount)) {
-			DRMLISTDEL(&bufmgr_gem->managers);
-			drm_intel_bufmgr_gem_destroy(bufmgr);
-		}
+	pthread_mutex_lock(&bufmgr_list_mutex);
 
-		pthread_mutex_unlock(&bufmgr_list_mutex);
+	if (atomic_dec_and_test(&bufmgr_gem->refcount)) {
+		DRMLISTDEL(&bufmgr_gem->managers);
+		drm_intel_bufmgr_gem_destroy(bufmgr);
 	}
+
+	pthread_mutex_unlock(&bufmgr_list_mutex);
 }
 
 drm_public void *drm_intel_gem_bo_map__gtt(drm_intel_bo *bo)
