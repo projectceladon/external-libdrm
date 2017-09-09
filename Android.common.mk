@@ -10,6 +10,8 @@ LOCAL_CFLAGS += \
 	-Wno-pointer-arith \
 	-Wno-enum-conversion
 
+LOCAL_PROPRIETARY_MODULE = true
+
 # Quiet down the build system and remove any .h files from the sources
 LOCAL_SRC_FILES := $(patsubst %.h, , $(LOCAL_SRC_FILES))
 LOCAL_EXPORT_C_INCLUDE_DIRS += $(LOCAL_PATH)
