@@ -64,6 +64,17 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_C_INCLUDES := \
         $(LOCAL_PATH)/include/drm
 
+LOCAL_COPY_HEADERS :=            \
+       xf86drm.h                \
+       include/drm/drm_fourcc.h \
+       include/drm/drm.h        \
+       include/drm/drm_mode.h   \
+       include/drm/drm_sarea.h  \
+       include/drm/i915_drm.h   \
+       intel/intel_bufmgr.h     \
+
+LOCAL_COPY_HEADERS_TO := libdrm
+
 include $(LIBDRM_COMMON_MK)
 include $(BUILD_SHARED_LIBRARY)
 
