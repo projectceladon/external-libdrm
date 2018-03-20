@@ -35,9 +35,9 @@ int drm_tegra_new(struct drm_tegra **drmp, int fd);
 void drm_tegra_close(struct drm_tegra *drm);
 
 int drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
-		     uint32_t flags, uint32_t size);
+                     uint32_t flags, uint32_t size);
 int drm_tegra_bo_wrap(struct drm_tegra_bo **bop, struct drm_tegra *drm,
-		      uint32_t handle, uint32_t flags, uint32_t size);
+                      uint32_t handle, uint32_t flags, uint32_t size);
 struct drm_tegra_bo *drm_tegra_bo_ref(struct drm_tegra_bo *bo);
 void drm_tegra_bo_unref(struct drm_tegra_bo *bo);
 int drm_tegra_bo_get_handle(struct drm_tegra_bo *bo, uint32_t *handle);
@@ -48,13 +48,13 @@ int drm_tegra_bo_get_flags(struct drm_tegra_bo *bo, uint32_t *flags);
 int drm_tegra_bo_set_flags(struct drm_tegra_bo *bo, uint32_t flags);
 
 struct drm_tegra_bo_tiling {
-	uint32_t mode;
-	uint32_t value;
+    uint32_t mode;
+    uint32_t value;
 };
 
 int drm_tegra_bo_get_tiling(struct drm_tegra_bo *bo,
-			    struct drm_tegra_bo_tiling *tiling);
+                            struct drm_tegra_bo_tiling *tiling);
 int drm_tegra_bo_set_tiling(struct drm_tegra_bo *bo,
-			    const struct drm_tegra_bo_tiling *tiling);
+                            const struct drm_tegra_bo_tiling *tiling);
 
 #endif /* __DRM_TEGRA_H__ */
