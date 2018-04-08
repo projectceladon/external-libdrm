@@ -385,7 +385,7 @@ static void dump_submit(struct msm_ringbuffer *msm_ring)
 		for (j = 0; j < cmd->nr_relocs; j++) {
 			struct drm_msm_gem_submit_reloc *r = &relocs[j];
 			ERROR_MSG("    reloc[%d]: submit_offset=%u, or=%08x, shift=%d, reloc_idx=%u"
-					", reloc_offset=%"PRIu64, j, r->submit_offset, r->or, r->shift,
+					", reloc_offset=%llu", j, r->submit_offset, r->or, r->shift,
 					r->reloc_idx, r->reloc_offset);
 		}
 	}
