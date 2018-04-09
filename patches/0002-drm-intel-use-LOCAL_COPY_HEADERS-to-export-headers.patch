@@ -1,0 +1,38 @@
+From 6793b8699d3f76dc3801077c2aaca6d778ba238b Mon Sep 17 00:00:00 2001
+From: li zhuangzhi <zhuangzhi.li@intel.com>
+Date: Wed, 20 Sep 2017 17:49:25 +0800
+Subject: [PATCH 2/7] drm-intel: use LOCAL_COPY_HEADERS to export headers
+
+Export necessary header files used by other components for Android,
+such as libva intel-driver, gralloc, hwcomposer, etc.
+
+Signed-off-by: li zhuangzhi <zhuangzhi.li@intel.com>
+---
+ Android.mk | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index 3947fef..6fa4456 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -64,6 +64,17 @@ LOCAL_SHARED_LIBRARIES := \
+ LOCAL_C_INCLUDES := \
+         $(LOCAL_PATH)/include/drm
+ 
++LOCAL_COPY_HEADERS :=            \
++       xf86drm.h                \
++       include/drm/drm_fourcc.h \
++       include/drm/drm.h        \
++       include/drm/drm_mode.h   \
++       include/drm/drm_sarea.h  \
++       include/drm/i915_drm.h   \
++       intel/intel_bufmgr.h     \
++
++LOCAL_COPY_HEADERS_TO := libdrm
++
+ include $(LIBDRM_COMMON_MK)
+ include $(BUILD_SHARED_LIBRARY)
+ 
+-- 
+2.7.4
+

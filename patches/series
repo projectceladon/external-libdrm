@@ -1,0 +1,10 @@
+#Github: https://github.com/intel/external-libdrm
+#Upstream: https://cgit.freedesktop.org/mesa/drm/
+#Upstream Commit Id: 4dfa458979c345ea5eb46749f545d78c09e3f244
+
+0001-Add-Conditional-check-for-compilation.patch
+0002-drm-intel-use-LOCAL_COPY_HEADERS-to-export-headers.patch
+0003-Add-fourcc-for-10bit-12bit-16bit-YUV-formats.patch
+0004-Add-definition-of-drm_color_ctm_post_offset.patch
+0005-Fix-missing-braces-compile-warnings-on-Android.patch
+0006-Added-fourcc-for-64bit-RGB-format.patch

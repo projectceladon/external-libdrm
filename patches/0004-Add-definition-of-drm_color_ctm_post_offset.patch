@@ -1,0 +1,31 @@
+From a4f2f264a573259b13bb8d56893130326a46eb4d Mon Sep 17 00:00:00 2001
+From: Gao Chun <chun.gao@intel.com>
+Date: Thu, 26 Oct 2017 23:55:53 +0800
+Subject: [PATCH 4/7] Add definition of drm_color_ctm_post_offset.
+
+Signed-off-by: Gao Chun <chun.gao@intel.com>
+---
+ include/drm/drm_mode.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/include/drm/drm_mode.h b/include/drm/drm_mode.h
+index 5597a87..f81dbfd 100644
+--- a/include/drm/drm_mode.h
++++ b/include/drm/drm_mode.h
+@@ -580,6 +580,13 @@ struct drm_color_ctm {
+ 	__s64 matrix[9];
+ };
+ 
++struct drm_color_ctm_post_offset {
++	/* Data is U0.16 fixed point format. */
++	__u16 red;
++	__u16 green;
++	__u16 blue;
++};
++
+ struct drm_color_lut {
+ 	/*
+ 	 * Data is U0.16 fixed point format.
+-- 
+2.7.4
+

@@ -1,0 +1,30 @@
+From 66eba1b1bc3f1b9086a91aa5c3f0e572f30dac08 Mon Sep 17 00:00:00 2001
+From: Poornima <poornima.y.n@intel.com>
+Date: Thu, 18 Jan 2018 09:22:59 +0530
+Subject: [PATCH 7/7] Added fourcc for 64bit RGB format
+
+Jira: https://jira01.devtools.intel.com/browse/OAM-52530
+Tests: Test Passes
+Signed-off-by: Poornima <poornima.y.n@intel.com>
+---
+ include/drm/drm_fourcc.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/drm/drm_fourcc.h b/include/drm/drm_fourcc.h
+index 986de1f..e7ce67a 100644
+--- a/include/drm/drm_fourcc.h
++++ b/include/drm/drm_fourcc.h
+@@ -113,6 +113,10 @@ extern "C" {
+ 
+ #define DRM_FORMAT_AYUV		fourcc_code('A', 'Y', 'U', 'V') /* [31:0] A:Y:Cb:Cr 8:8:8:8 little endian */
+ 
++/* 64 bpp RGB */
++#define DRM_FORMAT_XRGB161616  fourcc_code('X', 'R', '4', '8') /* [63:0] x:R:G:B 16:16:16:16 little endian */
++#define DRM_FORMAT_XBGR161616  fourcc_code('X', 'B', '4', '8') /* [63:0] x:B:G:R 16:16:16:16 little endian */
++
+ /*
+  * 2 plane RGB + A
+  * index 0 = RGB plane, same format as the corresponding non _A8 format has
+-- 
+2.7.4
+

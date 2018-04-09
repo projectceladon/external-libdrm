@@ -1,0 +1,29 @@
+From 5f672b4906f740b740aacc7d8939a8856d48dec5 Mon Sep 17 00:00:00 2001
+From: renchenglei <chenglei.ren@intel.com>
+Date: Mon, 20 Nov 2017 16:25:49 +0800
+Subject: [PATCH 6/7] Fix "missing-braces" compile warnings on Android
+
+Jira: None.
+Test: Build passes on Android and no warnings reported.
+Signed-off-by: renchenglei <chenglei.ren@intel.com>
+---
+ libsync.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libsync.h b/libsync.h
+index f1a2f96..2e79c57 100644
+--- a/libsync.h
++++ b/libsync.h
+@@ -85,7 +85,8 @@ static inline int sync_wait(int fd, int timeout)
+ 
+ static inline int sync_merge(const char *name, int fd1, int fd2)
+ {
+-	struct sync_merge_data data = {0};
++	struct sync_merge_data data;
++	memset(&data, 0, sizeof(struct sync_merge_data));
+ 	int ret;
+ 
+ 	data.fd2 = fd2;
+-- 
+2.7.4
+
