@@ -48,4 +48,8 @@ int drm_tegra_bo_get_name(struct drm_tegra_bo *bo, uint32_t *name);
 int drm_tegra_bo_open(struct drm_tegra *drm, uint32_t name, uint32_t flags,
                       struct drm_tegra_bo **bop);
 
+int drm_tegra_bo_export(struct drm_tegra_bo *bo, uint32_t flags);
+int drm_tegra_bo_import(struct drm_tegra *drm, int fd,
+                        struct drm_tegra_bo **bop);
+
 #endif /* __DRM_TEGRA_H__ */

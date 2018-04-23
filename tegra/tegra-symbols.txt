@@ -1,5 +1,7 @@
+drm_tegra_bo_export
 drm_tegra_bo_get_handle
 drm_tegra_bo_get_name
+drm_tegra_bo_import
 drm_tegra_bo_map
 drm_tegra_bo_new
 drm_tegra_bo_open

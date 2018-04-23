@@ -290,3 +290,64 @@ free:
     free(bo);
     return err;
 }
+
+drm_public int drm_tegra_bo_export(struct drm_tegra_bo *bo, uint32_t flags)
+{
+    int fd, err;
+
+    flags |= DRM_CLOEXEC;
+
+    err = drmPrimeHandleToFD(bo->drm->fd, bo->handle, flags, &fd);
+    if (err < 0)
+        return err;
+
+    return fd;
+}
+
+static ssize_t fd_get_size(int fd)
+{
+    ssize_t size, offset;
+    int err;
+
+    offset = lseek(fd, 0, SEEK_CUR);
+    if (offset < 0)
+        return -errno;
+
+    size = lseek(fd, 0, SEEK_END);
+    if (size < 0)
+        return -errno;
+
+    err = lseek(fd, offset, SEEK_SET);
+    if (err < 0)
+        return -errno;
+
+    return size;
+}
+
+drm_public int
+drm_tegra_bo_import(struct drm_tegra *drm, int fd, struct drm_tegra_bo **bop)
+{
+    struct drm_tegra_bo *bo;
+    ssize_t size;
+    int err;
+
+    size = fd_get_size(fd);
+    if (size < 0)
+        return size;
+
+    bo = drm_tegra_bo_alloc(drm, 0, 0, size);
+    if (!bo)
+        return -ENOMEM;
+
+    err = drmPrimeFDToHandle(drm->fd, fd, &bo->handle);
+    if (err < 0)
+        goto free;
+
+    *bop = bo;
+
+    return 0;
+
+free:
+    free(bo);
+    return err;
+}
