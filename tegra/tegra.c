@@ -97,6 +97,26 @@ drm_public void drm_tegra_close(struct drm_tegra *drm)
     free(drm);
 }
 
+static struct drm_tegra_bo *drm_tegra_bo_alloc(struct drm_tegra *drm,
+                                               uint32_t handle,
+                                               uint32_t flags,
+                                               uint32_t size)
+{
+    struct drm_tegra_bo *bo;
+
+    bo = calloc(1, sizeof(*bo));
+    if (!bo)
+        return NULL;
+
+    atomic_set(&bo->ref, 1);
+    bo->handle = handle;
+    bo->flags = flags;
+    bo->size = size;
+    bo->drm = drm;
+
+    return bo;
+}
+
 drm_public int
 drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
                  uint32_t flags, uint32_t size)
@@ -108,14 +128,9 @@ drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
     if (!drm || size == 0 || !bop)
         return -EINVAL;
 
-    bo = calloc(1, sizeof(*bo));
+    bo = drm_tegra_bo_alloc(drm, 0, flags, size);
     if (!bo)
         return -ENOMEM;
-
-    atomic_set(&bo->ref, 1);
-    bo->flags = flags;
-    bo->size = size;
-    bo->drm = drm;
 
     memset(&args, 0, sizeof(args));
     args.flags = flags;
@@ -145,15 +160,9 @@ drm_tegra_bo_wrap(struct drm_tegra_bo **bop, struct drm_tegra *drm,
     if (!drm || !bop)
         return -EINVAL;
 
-    bo = calloc(1, sizeof(*bo));
+    bo = drm_tegra_bo_alloc(drm, handle, flags, size);
     if (!bo)
         return -ENOMEM;
-
-    atomic_set(&bo->ref, 1);
-    bo->handle = handle;
-    bo->flags = flags;
-    bo->size = size;
-    bo->drm = drm;
 
     *bop = bo;
 
