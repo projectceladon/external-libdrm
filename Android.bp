@@ -48,6 +48,7 @@ cc_defaults {
 // Library for the device
 cc_library {
     name: "libdrm",
+    recovery_available: true,
     vendor_available: true,
     defaults: [
         "libdrm_defaults",
