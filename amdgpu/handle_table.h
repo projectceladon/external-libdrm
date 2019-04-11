@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Advanced Micro Devices, Inc.
+ * Copyright 2018 Advanced Micro Devices, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -19,16 +19,23 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
-*/
+ */
 
-#ifndef _UTIL_MATH_H_
-#define _UTIL_MATH_H_
+#ifndef _HANDLE_TABLE_H_
+#define _HANDLE_TABLE_H_
 
-#define MIN2( A, B )   ( (A)<(B) ? (A) : (B) )
-#define MAX2( A, B )   ( (A)>(B) ? (A) : (B) )
-#define MAX3( A, B, C ) ((A) > (B) ? MAX2(A, C) : MAX2(B, C))
+#include <stdint.h>
+#include "libdrm_macros.h"
 
-#define __align_mask(value, mask)  (((value) + (mask)) & ~(mask))
-#define ALIGN(value, alignment)    __align_mask(value, (__typeof__(value))((alignment) - 1))
+struct handle_table {
+	uint32_t	max_key;
+	void		**values;
+};
 
-#endif /*_UTIL_MATH_H_*/
+drm_private int handle_table_insert(struct handle_table *table, uint32_t key,
+				    void *value);
+drm_private void handle_table_remove(struct handle_table *table, uint32_t key);
+drm_private void *handle_table_lookup(struct handle_table *table, uint32_t key);
+drm_private void handle_table_fini(struct handle_table *table);
+
+#endif /* _HANDLE_TABLE_H_ */
