@@ -42,6 +42,7 @@ extern "C" {
 #endif
 
 struct drm_amdgpu_info_hw_ip;
+struct drm_amdgpu_bo_list_entry;
 
 /*--------------------------------------------------------------------------*/
 /* --------------------------- Defines ------------------------------------ */
@@ -84,7 +85,12 @@ enum amdgpu_bo_handle_type {
 	amdgpu_bo_handle_type_kms = 1,
 
 	/** DMA-buf fd handle */
-	amdgpu_bo_handle_type_dma_buf_fd = 2
+	amdgpu_bo_handle_type_dma_buf_fd = 2,
+
+	/** KMS handle, but re-importing as a DMABUF handle through
+	 *  drmPrimeHandleToFD is forbidden. (Glamor does that)
+	 */
+	amdgpu_bo_handle_type_kms_noimport = 3,
 };
 
 /** Define known types of GPU VM VA ranges */
@@ -673,6 +679,29 @@ int amdgpu_create_bo_from_user_mem(amdgpu_device_handle dev,
 				    amdgpu_bo_handle *buf_handle);
 
 /**
+ * Validate if the user memory comes from BO
+ *
+ * \param dev - [in] Device handle. See #amdgpu_device_initialize()
+ * \param cpu - [in] CPU address of user allocated memory which we
+ * want to map to GPU address space (make GPU accessible)
+ * (This address must be correctly aligned).
+ * \param size - [in] Size of allocation (must be correctly aligned)
+ * \param buf_handle - [out] Buffer handle for the userptr memory
+ * if the user memory is not from BO, the buf_handle will be NULL.
+ * \param offset_in_bo - [out] offset in this BO for this user memory
+ *
+ *
+ * \return   0 on success\n
+ *          <0 - Negative POSIX Error code
+ *
+*/
+int amdgpu_find_bo_by_cpu_mapping(amdgpu_device_handle dev,
+				  void *cpu,
+				  uint64_t size,
+				  amdgpu_bo_handle *buf_handle,
+				  uint64_t *offset_in_bo);
+
+/**
  * Free previosuly allocated memory
  *
  * \param   dev	       - \c [in] Device handle. See #amdgpu_device_initialize()
@@ -693,7 +722,17 @@ int amdgpu_create_bo_from_user_mem(amdgpu_device_handle dev,
 int amdgpu_bo_free(amdgpu_bo_handle buf_handle);
 
 /**
- * Request CPU access to GPU accessible memory
+ * Increase the reference count of a buffer object
+ *
+ * \param   bo - \c [in]  Buffer object handle to increase the reference count
+ *
+ * \sa amdgpu_bo_alloc(), amdgpu_bo_free()
+ *
+*/
+void amdgpu_bo_inc_ref(amdgpu_bo_handle bo);
+
+/**
+ * Request CPU access to GPU accessable memory
  *
  * \param   buf_handle - \c [in] Buffer handle
  * \param   cpu        - \c [out] CPU address to be used for access
@@ -735,6 +774,37 @@ int amdgpu_bo_cpu_unmap(amdgpu_bo_handle buf_handle);
 int amdgpu_bo_wait_for_idle(amdgpu_bo_handle buf_handle,
 			    uint64_t timeout_ns,
 			    bool *buffer_busy);
+
+/**
+ * Creates a BO list handle for command submission.
+ *
+ * \param   dev			- \c [in] Device handle.
+ *				   See #amdgpu_device_initialize()
+ * \param   number_of_buffers	- \c [in] Number of BOs in the list
+ * \param   buffers		- \c [in] List of BO handles
+ * \param   result		- \c [out] Created BO list handle
+ *
+ * \return   0 on success\n
+ *          <0 - Negative POSIX Error code
+ *
+ * \sa amdgpu_bo_list_destroy_raw(), amdgpu_cs_submit_raw2()
+*/
+int amdgpu_bo_list_create_raw(amdgpu_device_handle dev,
+			      uint32_t number_of_buffers,
+			      struct drm_amdgpu_bo_list_entry *buffers,
+			      uint32_t *result);
+
+/**
+ * Destroys a BO list handle.
+ *
+ * \param   bo_list	- \c [in] BO list handle.
+ *
+ * \return   0 on success\n
+ *          <0 - Negative POSIX Error code
+ *
+ * \sa amdgpu_bo_list_create_raw(), amdgpu_cs_submit_raw2()
+*/
+int amdgpu_bo_list_destroy_raw(amdgpu_device_handle dev, uint32_t bo_list);
 
 /**
  * Creates a BO list handle for command submission.
@@ -1548,6 +1618,28 @@ int amdgpu_cs_submit_raw(amdgpu_device_handle dev,
 			 int num_chunks,
 			 struct drm_amdgpu_cs_chunk *chunks,
 			 uint64_t *seq_no);
+
+/**
+ * Submit raw command submission to the kernel with a raw BO list handle.
+ *
+ * \param   dev	       - \c [in] device handle
+ * \param   context    - \c [in] context handle for context id
+ * \param   bo_list_handle - \c [in] raw bo list handle (0 for none)
+ * \param   num_chunks - \c [in] number of CS chunks to submit
+ * \param   chunks     - \c [in] array of CS chunks
+ * \param   seq_no     - \c [out] output sequence number for submission.
+ *
+ * \return   0 on success\n
+ *          <0 - Negative POSIX Error code
+ *
+ * \sa amdgpu_bo_list_create_raw(), amdgpu_bo_list_destroy_raw()
+ */
+int amdgpu_cs_submit_raw2(amdgpu_device_handle dev,
+			  amdgpu_context_handle context,
+			  uint32_t bo_list_handle,
+			  int num_chunks,
+			  struct drm_amdgpu_cs_chunk *chunks,
+			  uint64_t *seq_no);
 
 void amdgpu_cs_chunk_fence_to_dep(struct amdgpu_cs_fence *fence,
 				  struct drm_amdgpu_cs_chunk_dep *dep);
