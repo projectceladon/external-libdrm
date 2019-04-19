@@ -1,7 +1,7 @@
 SUBDIRS = util kms modeprint proptest modetest vbltest
 
 if HAVE_LIBKMS
-SUBDIRS += kmstest planetest
+SUBDIRS += kmstest
 endif
 
 if HAVE_RADEON
