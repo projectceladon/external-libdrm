@@ -70,7 +70,7 @@ static int drm_tegra_wrap(struct drm_tegra **drmp, int fd, bool close)
 	return 0;
 }
 
-int drm_tegra_new(struct drm_tegra **drmp, int fd)
+drm_public int drm_tegra_new(struct drm_tegra **drmp, int fd)
 {
 	bool supported = false;
 	drmVersionPtr version;
@@ -90,7 +90,7 @@ int drm_tegra_new(struct drm_tegra **drmp, int fd)
 	return drm_tegra_wrap(drmp, fd, false);
 }
 
-void drm_tegra_close(struct drm_tegra *drm)
+drm_public void drm_tegra_close(struct drm_tegra *drm)
 {
 	if (!drm)
 		return;
@@ -101,7 +101,7 @@ void drm_tegra_close(struct drm_tegra *drm)
 	free(drm);
 }
 
-int drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
+drm_public int drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
 		     uint32_t flags, uint32_t size)
 {
 	struct drm_tegra_gem_create args;
@@ -139,7 +139,7 @@ int drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
 	return 0;
 }
 
-int drm_tegra_bo_wrap(struct drm_tegra_bo **bop, struct drm_tegra *drm,
+drm_public int drm_tegra_bo_wrap(struct drm_tegra_bo **bop, struct drm_tegra *drm,
 		      uint32_t handle, uint32_t flags, uint32_t size)
 {
 	struct drm_tegra_bo *bo;
@@ -217,7 +217,7 @@ int drm_tegra_bo_name_get(struct drm_tegra_bo *bo, uint32_t *name)
 	return 0;
 }
 
-struct drm_tegra_bo *drm_tegra_bo_ref(struct drm_tegra_bo *bo)
+drm_public struct drm_tegra_bo *drm_tegra_bo_ref(struct drm_tegra_bo *bo)
 {
 	if (bo)
 		atomic_inc(&bo->ref);
@@ -225,13 +225,13 @@ struct drm_tegra_bo *drm_tegra_bo_ref(struct drm_tegra_bo *bo)
 	return bo;
 }
 
-void drm_tegra_bo_unref(struct drm_tegra_bo *bo)
+drm_public void drm_tegra_bo_unref(struct drm_tegra_bo *bo)
 {
 	if (bo && atomic_dec_and_test(&bo->ref))
 		drm_tegra_bo_free(bo);
 }
 
-int drm_tegra_bo_get_handle(struct drm_tegra_bo *bo, uint32_t *handle)
+drm_public int drm_tegra_bo_get_handle(struct drm_tegra_bo *bo, uint32_t *handle)
 {
 	if (!bo || !handle)
 		return -EINVAL;
@@ -241,7 +241,7 @@ int drm_tegra_bo_get_handle(struct drm_tegra_bo *bo, uint32_t *handle)
 	return 0;
 }
 
-int drm_tegra_bo_map(struct drm_tegra_bo *bo, void **ptr)
+drm_public int drm_tegra_bo_map(struct drm_tegra_bo *bo, void **ptr)
 {
 	struct drm_tegra *drm = bo->drm;
 
@@ -273,7 +273,7 @@ int drm_tegra_bo_map(struct drm_tegra_bo *bo, void **ptr)
 	return 0;
 }
 
-int drm_tegra_bo_unmap(struct drm_tegra_bo *bo)
+drm_public int drm_tegra_bo_unmap(struct drm_tegra_bo *bo)
 {
 	if (!bo)
 		return -EINVAL;
@@ -289,7 +289,7 @@ int drm_tegra_bo_unmap(struct drm_tegra_bo *bo)
 	return 0;
 }
 
-int drm_tegra_bo_get_flags(struct drm_tegra_bo *bo, uint32_t *flags)
+drm_public int drm_tegra_bo_get_flags(struct drm_tegra_bo *bo, uint32_t *flags)
 {
 	struct drm_tegra_gem_get_flags args;
 	struct drm_tegra *drm = bo->drm;
@@ -312,7 +312,7 @@ int drm_tegra_bo_get_flags(struct drm_tegra_bo *bo, uint32_t *flags)
 	return 0;
 }
 
-int drm_tegra_bo_set_flags(struct drm_tegra_bo *bo, uint32_t flags)
+drm_public int drm_tegra_bo_set_flags(struct drm_tegra_bo *bo, uint32_t flags)
 {
 	struct drm_tegra_gem_get_flags args;
 	struct drm_tegra *drm = bo->drm;
@@ -333,7 +333,7 @@ int drm_tegra_bo_set_flags(struct drm_tegra_bo *bo, uint32_t flags)
 	return 0;
 }
 
-int drm_tegra_bo_get_tiling(struct drm_tegra_bo *bo,
+drm_public int drm_tegra_bo_get_tiling(struct drm_tegra_bo *bo,
 			    struct drm_tegra_bo_tiling *tiling)
 {
 	struct drm_tegra_gem_get_tiling args;
@@ -359,7 +359,7 @@ int drm_tegra_bo_get_tiling(struct drm_tegra_bo *bo,
 	return 0;
 }
 
-int drm_tegra_bo_set_tiling(struct drm_tegra_bo *bo,
+drm_public int drm_tegra_bo_set_tiling(struct drm_tegra_bo *bo,
 			    const struct drm_tegra_bo_tiling *tiling)
 {
 	struct drm_tegra_gem_set_tiling args;
