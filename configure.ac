@@ -593,7 +593,6 @@ AC_CONFIG_FILES([
 	tests/exynos/Makefile
 	tests/tegra/Makefile
 	tests/nouveau/Makefile
-	tests/planetest/Makefile
 	tests/etnaviv/Makefile
 	tests/util/Makefile
 	man/Makefile
