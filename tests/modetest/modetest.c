@@ -1168,6 +1168,7 @@ static void set_gamma(struct device *dev, unsigned crtc_id, unsigned fourcc)
 	add_property_optional(dev, crtc_id, "DEGAMMA_LUT", 0);
 	add_property_optional(dev, crtc_id, "CTM", 0);
 	if (!add_property_optional(dev, crtc_id, "GAMMA_LUT", blob_id)) {
+		/* If we can't add the GAMMA_LUT property, try the legacy API. */
 		uint16_t r[256], g[256], b[256];
 
 		for (i = 0; i < 256; i++) {
@@ -1177,7 +1178,7 @@ static void set_gamma(struct device *dev, unsigned crtc_id, unsigned fourcc)
 		}
 
 		ret = drmModeCrtcSetGamma(dev->fd, crtc_id, 256, r, g, b);
-		if (ret)
+		if (ret && errno != ENOSYS)
 			fprintf(stderr, "failed to set gamma: %s\n", strerror(errno));
 	}
 }
