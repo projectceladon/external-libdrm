@@ -353,6 +353,12 @@ static const uint32_t bufferclear_cs_shader_gfx9[] = {
     0xbf810000
 };
 
+static const uint32_t bufferclear_cs_shader_gfx10[] = {
+	0xD7460004, 0x04010C08, 0x7E000204, 0x7E020205,
+	0x7E040206, 0x7E060207, 0xE01C2000, 0x80000004,
+	0xBF810000
+};
+
 static const uint32_t bufferclear_cs_shader_registers_gfx9[][2] = {
 	{0x2e12, 0x000C0041},	//{ mmCOMPUTE_PGM_RSRC1,	  0x000C0041 },
 	{0x2e13, 0x00000090},	//{ mmCOMPUTE_PGM_RSRC2,	  0x00000090 },
@@ -367,6 +373,11 @@ static const uint32_t buffercopy_cs_shader_gfx9[] = {
     0x260000ff, 0x000003ff, 0xd1fd0000, 0x04010c08,
     0x7e020280, 0xe00c2000, 0x80000200, 0xbf8c0f70,
     0xe01c2000, 0x80010200, 0xbf810000
+};
+
+static const uint32_t buffercopy_cs_shader_gfx10[] = {
+	0xD7460001, 0x04010C08, 0xE00C2000, 0x80000201,
+	0xBF8C3F70, 0xE01C2000, 0x80010201, 0xBF810000
 };
 
 static const uint32_t preamblecache_gfx9[] = {
@@ -652,6 +663,18 @@ unsigned int memcpy_cs_hang_slow_rv_codes[] = {
 
 struct amdgpu_test_shader memcpy_cs_hang_slow_rv = {
         memcpy_cs_hang_slow_rv_codes,
+        4,
+        3,
+        1
+};
+
+unsigned int memcpy_cs_hang_slow_nv_codes[] = {
+    0xd7460000, 0x04010c08, 0xe00c2000, 0x80000100,
+    0xbf8c0f70, 0xe01ca000, 0x80010100, 0xbf810000
+};
+
+struct amdgpu_test_shader memcpy_cs_hang_slow_nv = {
+        memcpy_cs_hang_slow_nv_codes,
         4,
         3,
         1
@@ -2446,6 +2469,9 @@ static int amdgpu_dispatch_load_cs_shader_hang_slow(uint32_t *ptr, int family)
 		case AMDGPU_FAMILY_RV:
 			shader = &memcpy_cs_hang_slow_rv;
 			break;
+		case AMDGPU_FAMILY_NV:
+			shader = &memcpy_cs_hang_slow_nv;
+			break;
 		default:
 			return -1;
 			break;
@@ -2466,19 +2492,30 @@ static int amdgpu_dispatch_load_cs_shader_hang_slow(uint32_t *ptr, int family)
 }
 
 static int amdgpu_dispatch_load_cs_shader(uint8_t *ptr,
-					   int cs_type)
+					   int cs_type,
+					   uint32_t version)
 {
 	uint32_t shader_size;
 	const uint32_t *shader;
 
 	switch (cs_type) {
 		case CS_BUFFERCLEAR:
-			shader = bufferclear_cs_shader_gfx9;
-			shader_size = sizeof(bufferclear_cs_shader_gfx9);
+			if (version == 9) {
+				shader = bufferclear_cs_shader_gfx9;
+				shader_size = sizeof(bufferclear_cs_shader_gfx9);
+			} else if (version == 10) {
+				shader = bufferclear_cs_shader_gfx10;
+				shader_size = sizeof(bufferclear_cs_shader_gfx10);
+			}
 			break;
 		case CS_BUFFERCOPY:
-			shader = buffercopy_cs_shader_gfx9;
-			shader_size = sizeof(buffercopy_cs_shader_gfx9);
+			if (version == 9) {
+				shader = buffercopy_cs_shader_gfx9;
+				shader_size = sizeof(buffercopy_cs_shader_gfx9);
+			} else if (version == 10) {
+				shader = buffercopy_cs_shader_gfx10;
+				shader_size = sizeof(buffercopy_cs_shader_gfx10);
+			}
 			break;
 		case CS_HANG:
 			shader = memcpy_ps_hang;
@@ -2493,7 +2530,7 @@ static int amdgpu_dispatch_load_cs_shader(uint8_t *ptr,
 	return 0;
 }
 
-static int amdgpu_dispatch_init(uint32_t *ptr, uint32_t ip_type)
+static int amdgpu_dispatch_init(uint32_t *ptr, uint32_t ip_type, uint32_t version)
 {
 	int i = 0;
 
@@ -2515,29 +2552,57 @@ static int amdgpu_dispatch_init(uint32_t *ptr, uint32_t ip_type)
 	ptr[i++] = 0x218;
 	ptr[i++] = 0;
 
+	/* Set new sh registers in GFX10 to 0 */
+	if (version == 10) {
+		/* mmCOMPUTE_SHADER_CHKSUM */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 1);
+		ptr[i++] = 0x22a;
+		ptr[i++] = 0;
+		/* mmCOMPUTE_REQ_CTRL */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 6);
+		ptr[i++] = 0x222;
+		i += 6;
+		/* mmCP_COHER_START_DELAY */
+		ptr[i++] = PACKET3(PACKET3_SET_UCONFIG_REG, 1);
+		ptr[i++] = 0x7b;
+		ptr[i++] = 0x20;
+	}
 	return i;
 }
 
-static int amdgpu_dispatch_write_cumask(uint32_t *ptr)
+static int amdgpu_dispatch_write_cumask(uint32_t *ptr, uint32_t version)
 {
 	int i = 0;
 
 	/*  Issue commands to set cu mask used in current dispatch */
-	/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE1 - mmCOMPUTE_STATIC_THREAD_MGMT_SE0 */
-	ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 2);
-	ptr[i++] = 0x216;
-	ptr[i++] = 0xffffffff;
-	ptr[i++] = 0xffffffff;
-	/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE3 - mmCOMPUTE_STATIC_THREAD_MGMT_SE2 */
-	ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 2);
-	ptr[i++] = 0x219;
-	ptr[i++] = 0xffffffff;
-	ptr[i++] = 0xffffffff;
+	if (version == 9) {
+		/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE1 - mmCOMPUTE_STATIC_THREAD_MGMT_SE0 */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 2);
+		ptr[i++] = 0x216;
+		ptr[i++] = 0xffffffff;
+		ptr[i++] = 0xffffffff;
+		/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE3 - mmCOMPUTE_STATIC_THREAD_MGMT_SE2 */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 2);
+		ptr[i++] = 0x219;
+		ptr[i++] = 0xffffffff;
+		ptr[i++] = 0xffffffff;
+	} else if (version == 10) {
+		/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE1 - mmCOMPUTE_STATIC_THREAD_MGMT_SE0 */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG_INDEX, 2);
+		ptr[i++] = 0x30000216;
+		ptr[i++] = 0xffffffff;
+		ptr[i++] = 0xffffffff;
+		/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE3 - mmCOMPUTE_STATIC_THREAD_MGMT_SE2 */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG_INDEX, 2);
+		ptr[i++] = 0x30000219;
+		ptr[i++] = 0xffffffff;
+		ptr[i++] = 0xffffffff;
+	}
 
 	return i;
 }
 
-static int amdgpu_dispatch_write2hw(uint32_t *ptr, uint64_t shader_addr)
+static int amdgpu_dispatch_write2hw(uint32_t *ptr, uint64_t shader_addr, uint32_t version)
 {
 	int i, j;
 
@@ -2557,12 +2622,20 @@ static int amdgpu_dispatch_write2hw(uint32_t *ptr, uint64_t shader_addr)
 		ptr[i++] = bufferclear_cs_shader_registers_gfx9[j][1];
 	}
 
+	if (version == 10) {
+		/* mmCOMPUTE_PGM_RSRC3 */
+		ptr[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 1);
+		ptr[i++] = 0x228;
+		ptr[i++] = 0;
+	}
+
 	return i;
 }
 
 static void amdgpu_memset_dispatch_test(amdgpu_device_handle device_handle,
 					 uint32_t ip_type,
-					 uint32_t ring)
+					 uint32_t ring,
+					 uint32_t version)
 {
 	amdgpu_context_handle context_handle;
 	amdgpu_bo_handle bo_dst, bo_shader, bo_cmd, resources[3];
@@ -2598,7 +2671,7 @@ static void amdgpu_memset_dispatch_test(amdgpu_device_handle device_handle,
 	CU_ASSERT_EQUAL(r, 0);
 	memset(ptr_shader, 0, bo_shader_size);
 
-	r = amdgpu_dispatch_load_cs_shader(ptr_shader, CS_BUFFERCLEAR);
+	r = amdgpu_dispatch_load_cs_shader(ptr_shader, CS_BUFFERCLEAR, version);
 	CU_ASSERT_EQUAL(r, 0);
 
 	r = amdgpu_bo_alloc_and_map(device_handle, bo_dst_size, 4096,
@@ -2608,13 +2681,13 @@ static void amdgpu_memset_dispatch_test(amdgpu_device_handle device_handle,
 	CU_ASSERT_EQUAL(r, 0);
 
 	i = 0;
-	i += amdgpu_dispatch_init(ptr_cmd + i, ip_type);
+	i += amdgpu_dispatch_init(ptr_cmd + i, ip_type, version);
 
 	/*  Issue commands to set cu mask used in current dispatch */
-	i += amdgpu_dispatch_write_cumask(ptr_cmd + i);
+	i += amdgpu_dispatch_write_cumask(ptr_cmd + i, version);
 
 	/* Writes shader state to HW */
-	i += amdgpu_dispatch_write2hw(ptr_cmd + i, mc_address_shader);
+	i += amdgpu_dispatch_write2hw(ptr_cmd + i, mc_address_shader, version);
 
 	/* Write constant data */
 	/* Writes the UAV constant data to the SGPRs. */
@@ -2623,7 +2696,10 @@ static void amdgpu_memset_dispatch_test(amdgpu_device_handle device_handle,
 	ptr_cmd[i++] = mc_address_dst;
 	ptr_cmd[i++] = (mc_address_dst >> 32) | 0x100000;
 	ptr_cmd[i++] = 0x400;
-	ptr_cmd[i++] = 0x74fac;
+	if (version == 9)
+		ptr_cmd[i++] = 0x74fac;
+	else if (version == 10)
+		ptr_cmd[i++] = 0x1104bfac;
 
 	/* Sets a range of pixel shader constants */
 	ptr_cmd[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 4);
@@ -2705,6 +2781,7 @@ static void amdgpu_memset_dispatch_test(amdgpu_device_handle device_handle,
 static void amdgpu_memcpy_dispatch_test(amdgpu_device_handle device_handle,
 					uint32_t ip_type,
 					uint32_t ring,
+					uint32_t version,
 					int hang)
 {
 	amdgpu_context_handle context_handle;
@@ -2744,7 +2821,7 @@ static void amdgpu_memcpy_dispatch_test(amdgpu_device_handle device_handle,
 	memset(ptr_shader, 0, bo_shader_size);
 
 	cs_type = hang ? CS_HANG : CS_BUFFERCOPY;
-	r = amdgpu_dispatch_load_cs_shader(ptr_shader, cs_type);
+	r = amdgpu_dispatch_load_cs_shader(ptr_shader, cs_type, version);
 	CU_ASSERT_EQUAL(r, 0);
 
 	r = amdgpu_bo_alloc_and_map(device_handle, bo_dst_size, 4096,
@@ -2762,13 +2839,13 @@ static void amdgpu_memcpy_dispatch_test(amdgpu_device_handle device_handle,
 	memset(ptr_src, 0x55, bo_dst_size);
 
 	i = 0;
-	i += amdgpu_dispatch_init(ptr_cmd + i, ip_type);
+	i += amdgpu_dispatch_init(ptr_cmd + i, ip_type, version);
 
 	/*  Issue commands to set cu mask used in current dispatch */
-	i += amdgpu_dispatch_write_cumask(ptr_cmd + i);
+	i += amdgpu_dispatch_write_cumask(ptr_cmd + i, version);
 
 	/* Writes shader state to HW */
-	i += amdgpu_dispatch_write2hw(ptr_cmd + i, mc_address_shader);
+	i += amdgpu_dispatch_write2hw(ptr_cmd + i, mc_address_shader, version);
 
 	/* Write constant data */
 	/* Writes the texture resource constants data to the SGPRs */
@@ -2777,7 +2854,10 @@ static void amdgpu_memcpy_dispatch_test(amdgpu_device_handle device_handle,
 	ptr_cmd[i++] = mc_address_src;
 	ptr_cmd[i++] = (mc_address_src >> 32) | 0x100000;
 	ptr_cmd[i++] = 0x400;
-	ptr_cmd[i++] = 0x74fac;
+	if (version == 9)
+		ptr_cmd[i++] = 0x74fac;
+	else if (version == 10)
+		ptr_cmd[i++] = 0x1104bfac;
 
 	/* Writes the UAV constant data to the SGPRs. */
 	ptr_cmd[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 4);
@@ -2785,7 +2865,10 @@ static void amdgpu_memcpy_dispatch_test(amdgpu_device_handle device_handle,
 	ptr_cmd[i++] = mc_address_dst;
 	ptr_cmd[i++] = (mc_address_dst >> 32) | 0x100000;
 	ptr_cmd[i++] = 0x400;
-	ptr_cmd[i++] = 0x74fac;
+	if (version == 9)
+		ptr_cmd[i++] = 0x74fac;
+	else if (version == 10)
+		ptr_cmd[i++] = 0x1104bfac;
 
 	/* clear mmCOMPUTE_RESOURCE_LIMITS */
 	ptr_cmd[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 1);
@@ -2869,16 +2952,22 @@ static void amdgpu_compute_dispatch_test(void)
 {
 	int r;
 	struct drm_amdgpu_info_hw_ip info;
-	uint32_t ring_id;
+	uint32_t ring_id, version;
 
 	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_COMPUTE, 0, &info);
 	CU_ASSERT_EQUAL(r, 0);
 	if (!info.available_rings)
 		printf("SKIP ... as there's no compute ring\n");
 
+	version = info.hw_ip_version_major;
+	if (version != 9 && version != 10) {
+		printf("SKIP ... unsupported gfx version %d\n", version);
+		return;
+	}
+
 	for (ring_id = 0; (1 << ring_id) & info.available_rings; ring_id++) {
-		amdgpu_memset_dispatch_test(device_handle, AMDGPU_HW_IP_COMPUTE, ring_id);
-		amdgpu_memcpy_dispatch_test(device_handle, AMDGPU_HW_IP_COMPUTE, ring_id, 0);
+		amdgpu_memset_dispatch_test(device_handle, AMDGPU_HW_IP_COMPUTE, ring_id, version);
+		amdgpu_memcpy_dispatch_test(device_handle, AMDGPU_HW_IP_COMPUTE, ring_id, version, 0);
 	}
 }
 
@@ -2886,16 +2975,22 @@ static void amdgpu_gfx_dispatch_test(void)
 {
 	int r;
 	struct drm_amdgpu_info_hw_ip info;
-	uint32_t ring_id;
+	uint32_t ring_id, version;
 
 	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_GFX, 0, &info);
 	CU_ASSERT_EQUAL(r, 0);
 	if (!info.available_rings)
 		printf("SKIP ... as there's no graphics ring\n");
 
+	version = info.hw_ip_version_major;
+	if (version != 9 && version != 10) {
+		printf("SKIP ... unsupported gfx version %d\n", version);
+		return;
+	}
+
 	for (ring_id = 0; (1 << ring_id) & info.available_rings; ring_id++) {
-		amdgpu_memset_dispatch_test(device_handle, AMDGPU_HW_IP_GFX, ring_id);
-		amdgpu_memcpy_dispatch_test(device_handle, AMDGPU_HW_IP_GFX, ring_id, 0);
+		amdgpu_memset_dispatch_test(device_handle, AMDGPU_HW_IP_GFX, ring_id, version);
+		amdgpu_memcpy_dispatch_test(device_handle, AMDGPU_HW_IP_GFX, ring_id, version, 0);
 	}
 }
 
@@ -2903,22 +2998,28 @@ void amdgpu_dispatch_hang_helper(amdgpu_device_handle device_handle, uint32_t ip
 {
 	int r;
 	struct drm_amdgpu_info_hw_ip info;
-	uint32_t ring_id;
+	uint32_t ring_id, version;
 
 	r = amdgpu_query_hw_ip_info(device_handle, ip_type, 0, &info);
 	CU_ASSERT_EQUAL(r, 0);
 	if (!info.available_rings)
 		printf("SKIP ... as there's no ring for ip %d\n", ip_type);
 
+	version = info.hw_ip_version_major;
+	if (version != 9 && version != 10) {
+		printf("SKIP ... unsupported gfx version %d\n", version);
+		return;
+	}
+
 	for (ring_id = 0; (1 << ring_id) & info.available_rings; ring_id++) {
-		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, 0);
-		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, 1);
-		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, 0);
+		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, version, 0);
+		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, version, 1);
+		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, version, 0);
 	}
 }
 
 static void amdgpu_memcpy_dispatch_hang_slow_test(amdgpu_device_handle device_handle,
-						  uint32_t ip_type, uint32_t ring)
+						  uint32_t ip_type, uint32_t ring, int version)
 {
 	amdgpu_context_handle context_handle;
 	amdgpu_bo_handle bo_src, bo_dst, bo_shader, bo_cmd, resources[4];
@@ -2977,13 +3078,13 @@ static void amdgpu_memcpy_dispatch_hang_slow_test(amdgpu_device_handle device_ha
 	memset(ptr_src, 0x55, bo_dst_size);
 
 	i = 0;
-	i += amdgpu_dispatch_init(ptr_cmd + i, ip_type);
+	i += amdgpu_dispatch_init(ptr_cmd + i, ip_type, version);
 
 	/*  Issue commands to set cu mask used in current dispatch */
-	i += amdgpu_dispatch_write_cumask(ptr_cmd + i);
+	i += amdgpu_dispatch_write_cumask(ptr_cmd + i, version);
 
 	/* Writes shader state to HW */
-	i += amdgpu_dispatch_write2hw(ptr_cmd + i, mc_address_shader);
+	i += amdgpu_dispatch_write2hw(ptr_cmd + i, mc_address_shader, version);
 
 	/* Write constant data */
 	/* Writes the texture resource constants data to the SGPRs */
@@ -2992,7 +3093,10 @@ static void amdgpu_memcpy_dispatch_hang_slow_test(amdgpu_device_handle device_ha
 	ptr_cmd[i++] = mc_address_src;
 	ptr_cmd[i++] = (mc_address_src >> 32) | 0x100000;
 	ptr_cmd[i++] = 0x400000;
-	ptr_cmd[i++] = 0x74fac;
+	if (version == 9)
+		ptr_cmd[i++] = 0x74fac;
+	else if (version == 10)
+		ptr_cmd[i++] = 0x1104bfac;
 
 	/* Writes the UAV constant data to the SGPRs. */
 	ptr_cmd[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 4);
@@ -3000,7 +3104,10 @@ static void amdgpu_memcpy_dispatch_hang_slow_test(amdgpu_device_handle device_ha
 	ptr_cmd[i++] = mc_address_dst;
 	ptr_cmd[i++] = (mc_address_dst >> 32) | 0x100000;
 	ptr_cmd[i++] = 0x400000;
-	ptr_cmd[i++] = 0x74fac;
+	if (version == 9)
+		ptr_cmd[i++] = 0x74fac;
+	else if (version == 10)
+		ptr_cmd[i++] = 0x1104bfac;
 
 	/* clear mmCOMPUTE_RESOURCE_LIMITS */
 	ptr_cmd[i++] = PACKET3_COMPUTE(PKT3_SET_SH_REG, 1);
@@ -3072,17 +3179,23 @@ void amdgpu_dispatch_hang_slow_helper(amdgpu_device_handle device_handle, uint32
 {
 	int r;
 	struct drm_amdgpu_info_hw_ip info;
-	uint32_t ring_id;
+	uint32_t ring_id, version;
 
 	r = amdgpu_query_hw_ip_info(device_handle, ip_type, 0, &info);
 	CU_ASSERT_EQUAL(r, 0);
 	if (!info.available_rings)
 		printf("SKIP ... as there's no ring for ip %d\n", ip_type);
 
+	version = info.hw_ip_version_major;
+	if (version != 9 && version != 10) {
+		printf("SKIP ... unsupported gfx version %d\n", version);
+		return;
+	}
+
 	for (ring_id = 0; (1 << ring_id) & info.available_rings; ring_id++) {
-		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, 0);
-		amdgpu_memcpy_dispatch_hang_slow_test(device_handle, ip_type, ring_id);
-		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, 0);
+		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, version, 0);
+		amdgpu_memcpy_dispatch_hang_slow_test(device_handle, ip_type, ring_id, version);
+		amdgpu_memcpy_dispatch_test(device_handle, ip_type, ring_id, version, 0);
 	}
 }
 
