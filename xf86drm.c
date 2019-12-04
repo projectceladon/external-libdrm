@@ -69,15 +69,6 @@
 
 #include "util_math.h"
 
-#ifdef __ANDROID__
-//#include <log/log.h>
-int __android_log_vprint(int prio, const char* tag, const char* fmt, va_list ap)
-#if defined(__GNUC__)
-    __attribute__((__format__(printf, 3, 0)))
-#endif
-     ;
-#endif
-
 #ifdef __OpenBSD__
 #define DRM_PRIMARY_MINOR_NAME  "drm"
 #define DRM_CONTROL_MINOR_NAME  "drmC"
@@ -147,11 +138,7 @@ void drmSetServerInfo(drmServerInfoPtr info)
 static int DRM_PRINTFLIKE(1, 0)
 drmDebugPrint(const char *format, va_list ap)
 {
-#ifdef __ANDROID__
-    return __android_log_vprint(3, "libdrm", format, ap);
-#else
     return vfprintf(stderr, format, ap);
-#endif
 }
 
 void
@@ -159,10 +146,8 @@ drmMsg(const char *format, ...)
 {
     va_list ap;
     const char *env;
-#ifndef __ANDROID__
     if (((env = getenv("LIBGL_DEBUG")) && strstr(env, "verbose")) ||
         (drm_server_info && drm_server_info->debug_print))
-#endif
     {
         va_start(ap, format);
         if (drm_server_info) {
@@ -2969,9 +2954,6 @@ sysfs_uevent_get(const char *path, const char *fmt, ...)
 }
 #endif
 
-/* Little white lie to avoid major rework of the existing code */
-#define DRM_BUS_VIRTIO 0x10
-
 static int drmParseSubsystemType(int maj, int min)
 {
 #ifdef __linux__
@@ -3001,9 +2983,6 @@ static int drmParseSubsystemType(int maj, int min)
     if (strncmp(name, "/host1x", 7) == 0)
         return DRM_BUS_HOST1X;
 
-    if (strncmp(name, "/virtio", 7) == 0)
-        return DRM_BUS_VIRTIO;
-
     return -EINVAL;
 #elif defined(__OpenBSD__)
     return DRM_BUS_PCI;
@@ -3013,22 +2992,6 @@ static int drmParseSubsystemType(int maj, int min)
 #endif
 }
 
-static void
-get_pci_path(int maj, int min, char *pci_path)
-{
-    char path[PATH_MAX + 1], *term;
-
-    snprintf(path, sizeof(path), "/sys/dev/char/%d:%d/device", maj, min);
-    if (!realpath(path, pci_path)) {
-        strcpy(pci_path, path);
-        return;
-    }
-
-    term = strrchr(pci_path, '/');
-    if (term && strncmp(term, "/virtio", 7) == 0)
-        *term = 0;
-}
-
 static int drmParsePciBusInfo(int maj, int min, drmPciBusInfoPtr info)
 {
 #ifdef __linux__
@@ -3036,7 +2999,7 @@ static int drmParsePciBusInfo(int maj, int min, drmPciBusInfoPtr info)
     char path[PATH_MAX + 1], *value;
     int num;
 
-    get_pci_path(maj, min, path);
+    snprintf(path, sizeof(path), "/sys/dev/char/%d:%d/device", maj, min);
 
     value = sysfs_uevent_get(path, "PCI_SLOT_NAME");
     if (!value)
@@ -3151,15 +3114,14 @@ static int parse_separate_sysfs_files(int maj, int min,
       "subsystem_vendor",
       "subsystem_device",
     };
-    char path[PATH_MAX + 1], pci_path[PATH_MAX + 1];
+    char path[PATH_MAX + 1];
     unsigned int data[ARRAY_SIZE(attrs)];
     FILE *fp;
     int ret;
 
-    get_pci_path(maj, min, pci_path);
-
     for (unsigned i = ignore_revision ? 1 : 0; i < ARRAY_SIZE(attrs); i++) {
-        snprintf(path, PATH_MAX, "%s/%s", pci_path, attrs[i]);
+        snprintf(path, PATH_MAX, "/sys/dev/char/%d:%d/device/%s", maj, min,
+                 attrs[i]);
         fp = fopen(path, "r");
         if (!fp)
             return -errno;
@@ -3183,13 +3145,11 @@ static int parse_separate_sysfs_files(int maj, int min,
 static int parse_config_sysfs_file(int maj, int min,
                                    drmPciDeviceInfoPtr device)
 {
-    char path[PATH_MAX + 1], pci_path[PATH_MAX + 1];
+    char path[PATH_MAX + 1];
     unsigned char config[64];
     int fd, ret;
 
-    get_pci_path(maj, min, pci_path);
-
-    snprintf(path, PATH_MAX, "%s/config", pci_path);
+    snprintf(path, PATH_MAX, "/sys/dev/char/%d:%d/device/config", maj, min);
     fd = open(path, O_RDONLY);
     if (fd < 0)
         return -errno;
@@ -3886,7 +3846,6 @@ int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device)
 
         switch (subsystem_type) {
         case DRM_BUS_PCI:
-        case DRM_BUS_VIRTIO:
             ret = drmProcessPciDevice(&d, node, node_type, maj, min, true, flags);
             if (ret)
                 continue;
@@ -4003,7 +3962,6 @@ int drmGetDevices2(uint32_t flags, drmDevicePtr devices[], int max_devices)
     int ret, i, node_count, device_count;
     int max_count = 16;
 
-
     if (drm_device_validate_flags(flags))
         return -EINVAL;
 
@@ -4040,7 +3998,6 @@ int drmGetDevices2(uint32_t flags, drmDevicePtr devices[], int max_devices)
 
         switch (subsystem_type) {
         case DRM_BUS_PCI:
-        case DRM_BUS_VIRTIO:
             ret = drmProcessPciDevice(&device, node, node_type,
                                       maj, min, devices != NULL, flags);
             if (ret)

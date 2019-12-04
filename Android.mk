@@ -59,7 +59,6 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
 	$(LOCAL_PATH)/android
 
 LOCAL_SHARED_LIBRARIES := \
-	liblog \
 	libcutils
 
 LOCAL_C_INCLUDES := \
