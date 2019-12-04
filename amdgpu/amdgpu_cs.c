@@ -705,7 +705,7 @@ int amdgpu_cs_submit_raw(amdgpu_device_handle dev,
 			 struct drm_amdgpu_cs_chunk *chunks,
 			 uint64_t *seq_no)
 {
-	union drm_amdgpu_cs cs = {0};
+	union drm_amdgpu_cs cs;
 	uint64_t *chunk_array;
 	int i, r;
 	if (num_chunks == 0)
@@ -750,7 +750,7 @@ int amdgpu_cs_fence_to_handle(amdgpu_device_handle dev,
 			      uint32_t what,
 			      uint32_t *out_handle)
 {
-	union drm_amdgpu_fence_to_handle fth = {0};
+	union drm_amdgpu_fence_to_handle fth;
 	int r;
 
 	fth.in.fence.ctx_id = fence->context->id;
