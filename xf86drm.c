@@ -2749,7 +2749,8 @@ char *drmGetDeviceNameFromFd(int fd)
      * things worse with even more ad hoc directory walking code to
      * discover the device file name. */
 
-    fstat(fd, &sbuf);
+    if (fstat(fd, &sbuf))
+        return NULL;
     d = sbuf.st_rdev;
 
     for (i = 0; i < DRM_MAX_MINOR; i++) {
