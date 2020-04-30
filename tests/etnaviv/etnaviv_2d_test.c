@@ -31,7 +31,7 @@
 
 #include "xf86drm.h"
 #include "etnaviv_drmif.h"
-#include "etnaviv_drm.h"
+#include <drm/etnaviv_drm.h>
 
 #include "state.xml.h"
 #include "state_2d.xml.h"
