@@ -5,6 +5,7 @@ LIBDRM_INTEL_FILES := \
 	intel_bufmgr_gem.c \
 	intel_decode.c \
 	intel_chipset.h \
+        intel_gvt.c \
 	mm.c \
 	mm.h \
 	uthash.h
@@ -12,4 +13,5 @@ LIBDRM_INTEL_FILES := \
 LIBDRM_INTEL_H_FILES := \
 	intel_bufmgr.h \
 	intel_aub.h \
-	intel_debug.h
+	intel_debug.h \
+        intel_gvt.h

@@ -9,5 +9,6 @@ cc_defaults {
         "intel_decode.c",
         "test_decode.c",
         "mm.c",
+        "intel_gvt.c",
     ],
 }

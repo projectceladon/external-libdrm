@@ -531,6 +531,8 @@ typedef struct drm_i915_irq_wait {
  */
 #define I915_PARAM_CS_TIMESTAMP_FREQUENCY 51
 
+#define I915_PARAM_IS_GVT                 55
+
 typedef struct drm_i915_getparam {
 	__s32 param;
 	/*
