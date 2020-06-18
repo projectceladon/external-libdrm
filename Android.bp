@@ -44,7 +44,7 @@ cc_defaults {
         "-Wno-unused-parameter",
         "-Wno-unused-variable",
     ],
-    export_include_dirs: ["."],
+    export_system_include_dirs: ["."],
 }
 
 // Library for the device
