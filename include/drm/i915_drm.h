@@ -531,6 +531,36 @@ typedef struct drm_i915_irq_wait {
  */
 #define I915_PARAM_CS_TIMESTAMP_FREQUENCY 51
 
+/*
+ * Once upon a time we supposed that writes through the GGTT would be
+ * immediately in physical memory (once flushed out of the CPU path). However,
+ * on a few different processors and chipsets, this is not necessarily the cas
+ * as the writes appear to be buffered internally. Thus a read of the backing
+ * storage (physical memory) via a different path (with different physical tag
+ * to the indirect write via the GGTT) will see stale values from before
+ * the GGTT write. Inside the kernel, we can for the most part keep track of
+ * the different read/write domains in use (e.g. set-domain), but the assumpti
+ * of coherency is baked into the ABI, hence reporting its true state in this
+ * parameter.
+ *
+ * Reports true when writes via mmap_gtt are immediately visible following an
+ * lfence to flush the WCB.
+ *
+ * Reports false when writes via mmap_gtt are indeterminately delayed in an in
+ * internal buffer and are _not_ immediately visible to third parties accessin
+ * directly via mmap_cpu/mmap_wc. Use of mmap_gtt as part of an IPC
+ * communications channel when reporting false is strongly disadvised.
+ */
+#define I915_PARAM_MMAP_GTT_COHERENT 52
+
+/*
+ * Revision of the i915-perf uAPI. The value returned helps determine what
+ * i915-perf features are available. See drm_i915_perf_property_id.
+ */
+#define I915_PARAM_PERF_REVISION 53
+
+/* Must be kept compact -- no holes and well documented */
+
 typedef struct drm_i915_getparam {
 	__s32 param;
 	/*
@@ -1527,6 +1557,26 @@ enum drm_i915_perf_property_id {
 	 */
 	DRM_I915_PERF_PROP_OA_EXPONENT,
 
+	/**
+	 * Specifying this property sets up a hrtimer in nanoseconds at which
+	 * the i915 driver will check the OA buffer for available data. A
+	 * value of 0 means no hrtimer will be started. Values below 100
+	 * microseconds are not allowed.
+	 *
+	 * This property is available in perf revision 2.
+	 */
+	DRM_I915_PERF_PROP_POLL_OA_DELAY,
+
+	/**
+	 * Specifying this property sets up the interrupt mechanism for the OA
+	 * buffer in i915. This option in conjuction with a long polling delay
+	 * for avaibility of OA data can reduce CPU load significantly if you
+	 * do not care about OA data being read as soon as it's available.
+	 *
+	 * This property is available in perf revision 2.
+	 */
+	DRM_I915_PERF_PROP_OA_ENABLE_INTERRUPT,
+
 	DRM_I915_PERF_PROP_MAX /* non-ABI */
 };
 
@@ -1564,6 +1614,27 @@ struct drm_i915_perf_open_param {
  * It is an error to try and read a stream that is disabled.
  */
 #define I915_PERF_IOCTL_DISABLE	_IO('i', 0x1)
+
+/**
+ * Actively check the availability of data from a stream.
+ *
+ * A stream data availability can be driven by two types of events :
+ *
+ *   - if enabled, the kernel's hrtimer checking the amount of available data
+ *     in the OA buffer through head/tail registers.
+ *
+ *   - if enabled, the OA unit's interrupt mechanism
+ *
+ * The kernel hrtimer incur a cost of running callback at fixed time
+ * intervals, while the OA interrupt might only happen rarely. In the
+ * situation where the application has disabled the kernel's hrtimer and only
+ * uses the OA interrupt to know about available data, the application can
+ * request an active check of the available OA data through this ioctl. This
+ * will make any data in the OA buffer available with either poll() or read().
+ *
+ * This ioctl is available in perf revision 2.
+ */
+#define I915_PERF_IOCTL_FLUSH_DATA _IO('i', 0x2)
 
 /**
  * Common to all i915 perf records
