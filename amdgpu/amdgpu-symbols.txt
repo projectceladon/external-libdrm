@@ -1,17 +1,3 @@
-#!/bin/bash
-
-set -u
-
-# The following symbols (past the first five) are taken from the public headers.
-# A list of the latter should be available Makefile.am/libdrm_amdgpuinclude_HEADERS
-
-FUNCS=$($NM -D --format=bsd --defined-only ${1-.libs/libdrm_amdgpu.so} | awk '{print $3}' | while read func; do
-( grep -q "^$func$" || echo $func )  <<EOF
-__bss_start
-_edata
-_end
-_fini
-_init
 amdgpu_bo_alloc
 amdgpu_bo_cpu_map
 amdgpu_bo_cpu_unmap
@@ -46,6 +32,7 @@ amdgpu_cs_fence_to_handle
 amdgpu_cs_import_syncobj
 amdgpu_cs_query_fence_status
 amdgpu_cs_query_reset_state
+amdgpu_cs_query_reset_state2
 amdgpu_query_sw_info
 amdgpu_cs_signal_semaphore
 amdgpu_cs_submit
@@ -56,6 +43,7 @@ amdgpu_cs_syncobj_export_sync_file2
 amdgpu_cs_syncobj_import_sync_file
 amdgpu_cs_syncobj_import_sync_file2
 amdgpu_cs_syncobj_query
+amdgpu_cs_syncobj_query2
 amdgpu_cs_syncobj_reset
 amdgpu_cs_syncobj_signal
 amdgpu_cs_syncobj_timeline_signal
@@ -84,8 +72,3 @@ amdgpu_va_range_free
 amdgpu_va_range_query
 amdgpu_vm_reserve_vmid
 amdgpu_vm_unreserve_vmid
-EOF
-done)
-
-test ! -n "$FUNCS" || echo $FUNCS
-test ! -n "$FUNCS"
