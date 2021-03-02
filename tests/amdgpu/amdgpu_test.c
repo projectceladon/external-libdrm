@@ -58,6 +58,7 @@
 #define VM_TESTS_STR "VM Tests"
 #define RAS_TESTS_STR "RAS Tests"
 #define SYNCOBJ_TIMELINE_TESTS_STR "SYNCOBJ TIMELINE Tests"
+#define SECURITY_TESTS_STR "Security Tests"
 
 /**
  *  Open handles for amdgpu devices
@@ -130,6 +131,12 @@ static CU_SuiteInfo suites[] = {
 		.pCleanupFunc = suite_syncobj_timeline_tests_clean,
 		.pTests = syncobj_timeline_tests,
 	},
+	{
+		.pName = SECURITY_TESTS_STR,
+		.pInitFunc = suite_security_tests_init,
+		.pCleanupFunc = suite_security_tests_clean,
+		.pTests = security_tests,
+	},
 
 	CU_SUITE_INFO_NULL,
 };
@@ -149,7 +156,7 @@ static CU_BOOL always_active()
 static Suites_Active_Status suites_active_stat[] = {
 		{
 			.pName = BASIC_TESTS_STR,
-			.pActive = always_active,
+			.pActive = suite_basic_tests_enable,
 		},
 		{
 			.pName = BO_TESTS_STR,
@@ -186,6 +193,10 @@ static Suites_Active_Status suites_active_stat[] = {
 		{
 			.pName = SYNCOBJ_TIMELINE_TESTS_STR,
 			.pActive = suite_syncobj_timeline_tests_enable,
+		},
+		{
+			.pName = SECURITY_TESTS_STR,
+			.pActive = suite_security_tests_enable,
 		},
 };
 
