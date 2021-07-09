@@ -134,6 +134,10 @@ void vic_image_dump(struct vic_image *image, FILE *fp)
 int vic30_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
               struct vic **vicp);
 
+/* from vic40.c */
+int vic40_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
+              struct vic **vicp);
+
 int vic_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
             struct vic **vicp)
 {
@@ -144,6 +148,9 @@ int vic_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
     switch (version) {
     case 0x40:
         return vic30_new(drm, channel, vicp);
+
+    case 0x21:
+        return vic40_new(drm, channel, vicp);
     }
 
     return -ENOTSUP;
