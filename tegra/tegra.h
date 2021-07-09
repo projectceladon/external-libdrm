@@ -28,6 +28,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <tegra_drm.h>
+
+enum drm_tegra_class {
+    DRM_TEGRA_HOST1X,
+    DRM_TEGRA_GR2D,
+    DRM_TEGRA_GR3D,
+    DRM_TEGRA_VIC,
+};
+
 struct drm_tegra_bo;
 struct drm_tegra;
 
@@ -51,5 +60,18 @@ int drm_tegra_bo_open(struct drm_tegra *drm, uint32_t name, uint32_t flags,
 int drm_tegra_bo_export(struct drm_tegra_bo *bo, uint32_t flags);
 int drm_tegra_bo_import(struct drm_tegra *drm, int fd,
                         struct drm_tegra_bo **bop);
+
+struct drm_tegra_channel;
+struct drm_tegra_mapping;
+
+int drm_tegra_channel_open(struct drm_tegra *drm,
+                           enum drm_tegra_class client,
+                           struct drm_tegra_channel **channelp);
+int drm_tegra_channel_close(struct drm_tegra_channel *channel);
+unsigned int drm_tegra_channel_get_version(struct drm_tegra_channel *channel);
+int drm_tegra_channel_map(struct drm_tegra_channel *channel,
+                          struct drm_tegra_bo *bo, uint32_t flags,
+                          struct drm_tegra_mapping **mapp);
+int drm_tegra_channel_unmap(struct drm_tegra_mapping *map);
 
 #endif /* __DRM_TEGRA_H__ */

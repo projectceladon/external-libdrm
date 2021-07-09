@@ -22,7 +22,7 @@ libdrm_tegra = library(
   'drm_tegra',
   [
     files(
-      'private.h', 'tegra.c'
+      'channel.c', 'private.h', 'tegra.c'
     ),
     config_file
   ],
