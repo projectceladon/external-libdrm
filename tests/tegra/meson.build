@@ -34,6 +34,8 @@ libdrm_test_tegra = static_library(
     'drm-test-tegra.h',
     'vic.c',
     'vic.h',
+    'vic30.c',
+    'vic30.h',
   ), config_file ],
   include_directories : [inc_root, inc_drm, inc_tegra],
   link_with : libdrm,
