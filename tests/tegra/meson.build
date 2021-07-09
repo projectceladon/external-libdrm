@@ -27,11 +27,30 @@ libdrm_test = static_library(
   link_with : libdrm,
 )
 
+libdrm_test_tegra = static_library(
+  'drm-test-tegra',
+  [files(
+    'drm-test-tegra.c',
+    'drm-test-tegra.h',
+  ), config_file ],
+  include_directories : [inc_root, inc_drm, inc_tegra],
+  link_with : libdrm,
+)
+
 openclose = executable(
   'tegra-openclose',
   files('openclose.c'),
   include_directories : [inc_root, inc_drm, inc_tegra],
   c_args : libdrm_c_args,
   link_with : [libdrm, libdrm_tegra],
+  install : with_install_tests,
+)
+
+gr2d_fill = executable(
+  'tegra-gr2d-fill',
+  files('gr2d-fill.c'),
+  include_directories : [inc_root, inc_drm, inc_tegra],
+  c_args : libdrm_c_args,
+  link_with : [libdrm, libdrm_tegra, libdrm_test, libdrm_test_tegra],
   install : with_install_tests,
 )
