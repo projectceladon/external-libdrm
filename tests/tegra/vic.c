@@ -138,6 +138,10 @@ int vic30_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
 int vic40_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
               struct vic **vicp);
 
+/* from vic41.c */
+int vic41_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
+              struct vic **vicp);
+
 int vic_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
             struct vic **vicp)
 {
@@ -151,6 +155,9 @@ int vic_new(struct drm_tegra *drm, struct drm_tegra_channel *channel,
 
     case 0x21:
         return vic40_new(drm, channel, vicp);
+
+    case 0x18:
+        return vic41_new(drm, channel, vicp);
     }
 
     return -ENOTSUP;
