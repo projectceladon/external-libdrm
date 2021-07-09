@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         drmFreeVersion(version);
     }
 
-    err = drm_tegra_new(&tegra, fd);
+    err = drm_tegra_new(fd, &tegra);
     if (err < 0)
         return 1;
 

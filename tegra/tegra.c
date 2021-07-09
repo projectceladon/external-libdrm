@@ -66,7 +66,7 @@ static int drm_tegra_wrap(struct drm_tegra **drmp, int fd, bool close)
     return 0;
 }
 
-drm_public int drm_tegra_new(struct drm_tegra **drmp, int fd)
+drm_public int drm_tegra_new(int fd, struct drm_tegra **drmp)
 {
     bool supported = false;
     drmVersionPtr version;
@@ -118,8 +118,8 @@ static struct drm_tegra_bo *drm_tegra_bo_alloc(struct drm_tegra *drm,
 }
 
 drm_public int
-drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
-                 uint32_t flags, uint32_t size)
+drm_tegra_bo_new(struct drm_tegra *drm, uint32_t flags, uint32_t size,
+                 struct drm_tegra_bo **bop)
 {
     struct drm_tegra_gem_create args;
     struct drm_tegra_bo *bo;
@@ -152,8 +152,8 @@ drm_tegra_bo_new(struct drm_tegra_bo **bop, struct drm_tegra *drm,
 }
 
 drm_public int
-drm_tegra_bo_wrap(struct drm_tegra_bo **bop, struct drm_tegra *drm,
-                  uint32_t handle, uint32_t flags, uint32_t size)
+drm_tegra_bo_wrap(struct drm_tegra *drm, uint32_t handle, uint32_t flags,
+                  uint32_t size, struct drm_tegra_bo **bop)
 {
     struct drm_tegra_bo *bo;
 
@@ -183,7 +183,8 @@ drm_public void drm_tegra_bo_unref(struct drm_tegra_bo *bo)
         drm_tegra_bo_free(bo);
 }
 
-drm_public int drm_tegra_bo_get_handle(struct drm_tegra_bo *bo, uint32_t *handle)
+drm_public int
+drm_tegra_bo_get_handle(struct drm_tegra_bo *bo, uint32_t *handle)
 {
     if (!bo || !handle)
         return -EINVAL;
