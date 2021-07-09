@@ -211,8 +211,8 @@ drm_public int drm_tegra_bo_map(struct drm_tegra_bo *bo, void **ptr)
 
         bo->offset = args.offset;
 
-        bo->map = mmap(0, bo->size, PROT_READ | PROT_WRITE, MAP_SHARED,
-                       drm->fd, bo->offset);
+        bo->map = drm_mmap(NULL, bo->size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                           drm->fd, bo->offset);
         if (bo->map == MAP_FAILED) {
             bo->map = NULL;
             return -errno;
