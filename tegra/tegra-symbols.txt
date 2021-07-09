@@ -15,4 +15,11 @@ drm_tegra_channel_map
 drm_tegra_channel_open
 drm_tegra_channel_unmap
 drm_tegra_close
+drm_tegra_job_free
+drm_tegra_job_get_pushbuf
+drm_tegra_job_new
+drm_tegra_job_submit
 drm_tegra_new
+drm_tegra_pushbuf_begin
+drm_tegra_pushbuf_end
+drm_tegra_pushbuf_relocate

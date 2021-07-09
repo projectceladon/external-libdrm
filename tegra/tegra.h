@@ -63,6 +63,22 @@ int drm_tegra_bo_import(struct drm_tegra *drm, int fd,
 
 struct drm_tegra_channel;
 struct drm_tegra_mapping;
+struct drm_tegra_pushbuf;
+struct drm_tegra_job;
+
+enum drm_tegra_sync_cond {
+    DRM_TEGRA_SYNC_COND_IMMEDIATE,
+    DRM_TEGRA_SYNC_COND_OP_DONE,
+    DRM_TEGRA_SYNC_COND_RD_DONE,
+    DRM_TEGRA_SYNC_COND_WR_SAFE,
+    DRM_TEGRA_SYNC_COND_MAX,
+  };
+
+struct drm_tegra_fence {
+    struct drm_tegra *drm;
+    uint32_t syncpt;
+    uint32_t value;
+};
 
 int drm_tegra_channel_open(struct drm_tegra *drm,
                            enum drm_tegra_class client,
@@ -73,5 +89,23 @@ int drm_tegra_channel_map(struct drm_tegra_channel *channel,
                           struct drm_tegra_bo *bo, uint32_t flags,
                           struct drm_tegra_mapping **mapp);
 int drm_tegra_channel_unmap(struct drm_tegra_mapping *map);
+
+int drm_tegra_job_new(struct drm_tegra_channel *channel,
+                      struct drm_tegra_job **jobp);
+int drm_tegra_job_free(struct drm_tegra_job *job);
+int drm_tegra_job_get_pushbuf(struct drm_tegra_job *job,
+                              struct drm_tegra_pushbuf **pushbufp);
+int drm_tegra_job_submit(struct drm_tegra_job *job,
+                         struct drm_tegra_fence *fence);
+int drm_tegra_job_wait(struct drm_tegra_job *job, unsigned long timeout);
+
+int drm_tegra_pushbuf_begin(struct drm_tegra_pushbuf *pushbuf,
+                            unsigned int words, uint32_t **ptrp);
+int drm_tegra_pushbuf_end(struct drm_tegra_pushbuf *pushbuf, uint32_t *ptr);
+int drm_tegra_pushbuf_relocate(struct drm_tegra_pushbuf *pushbuf,
+                               uint32_t **ptrp,
+                               struct drm_tegra_mapping *target,
+                               unsigned long offset, unsigned int shift,
+                               uint32_t flags);
 
 #endif /* __DRM_TEGRA_H__ */

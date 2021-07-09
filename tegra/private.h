@@ -72,4 +72,36 @@ struct drm_tegra_mapping {
     uint32_t id;
 };
 
+struct drm_tegra_pushbuf {
+    struct drm_tegra_job *job;
+
+    uint32_t *start;
+    uint32_t *end;
+    uint32_t *ptr;
+};
+
+void drm_tegra_pushbuf_free(struct drm_tegra_pushbuf *pushbuf);
+
+struct drm_tegra_job {
+    struct drm_tegra_channel *channel;
+    struct drm_tegra_pushbuf *pushbuf;
+    size_t page_size;
+
+    struct drm_tegra_submit_cmd *commands;
+    unsigned int num_commands;
+
+    struct drm_tegra_submit_buf *buffers;
+    unsigned int num_buffers;
+
+    struct {
+        uint32_t id;
+        uint32_t increments;
+        uint32_t fence;
+    } syncpt;
+};
+
+struct drm_tegra_submit_cmd *
+drm_tegra_job_add_command(struct drm_tegra_job *job, uint32_t type,
+                          uint32_t flags);
+
 #endif /* __DRM_TEGRA_PRIVATE_H__ */
