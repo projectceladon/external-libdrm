@@ -65,6 +65,7 @@ struct drm_tegra_channel;
 struct drm_tegra_mapping;
 struct drm_tegra_pushbuf;
 struct drm_tegra_job;
+struct drm_tegra_syncpoint;
 
 enum drm_tegra_sync_cond {
     DRM_TEGRA_SYNC_COND_IMMEDIATE,
@@ -102,10 +103,25 @@ int drm_tegra_job_wait(struct drm_tegra_job *job, unsigned long timeout);
 int drm_tegra_pushbuf_begin(struct drm_tegra_pushbuf *pushbuf,
                             unsigned int words, uint32_t **ptrp);
 int drm_tegra_pushbuf_end(struct drm_tegra_pushbuf *pushbuf, uint32_t *ptr);
+int drm_tegra_pushbuf_wait(struct drm_tegra_pushbuf *pushbuf,
+                           struct drm_tegra_syncpoint *syncpt,
+                           uint32_t value);
 int drm_tegra_pushbuf_relocate(struct drm_tegra_pushbuf *pushbuf,
                                uint32_t **ptrp,
                                struct drm_tegra_mapping *target,
                                unsigned long offset, unsigned int shift,
                                uint32_t flags);
+int drm_tegra_pushbuf_sync(struct drm_tegra_pushbuf *pushbuf,
+                           struct drm_tegra_syncpoint *syncpt,
+                           unsigned int count);
+int drm_tegra_pushbuf_sync_cond(struct drm_tegra_pushbuf *pushbuf,
+                                uint32_t **ptrp,
+                                struct drm_tegra_syncpoint *syncpt,
+                                enum drm_tegra_sync_cond cond);
+
+int drm_tegra_syncpoint_new(struct drm_tegra *drm,
+                            struct drm_tegra_syncpoint **syncptp);
+int drm_tegra_syncpoint_free(struct drm_tegra_syncpoint *syncpt);
+int drm_tegra_fence_wait(struct drm_tegra_fence *fence, unsigned long timeout);
 
 #endif /* __DRM_TEGRA_H__ */

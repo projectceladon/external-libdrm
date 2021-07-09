@@ -104,4 +104,9 @@ struct drm_tegra_submit_cmd *
 drm_tegra_job_add_command(struct drm_tegra_job *job, uint32_t type,
                           uint32_t flags);
 
+struct drm_tegra_syncpoint {
+    struct drm_tegra *drm;
+    uint32_t id;
+};
+
 #endif /* __DRM_TEGRA_PRIVATE_H__ */
