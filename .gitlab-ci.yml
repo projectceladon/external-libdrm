@@ -14,7 +14,7 @@
 # repository's registry will be used there as well.
 variables:
   UPSTREAM_REPO: mesa/drm
-  DEBIAN_TAG: "2020-11-15"
+  DEBIAN_TAG: "2021-02-11"
   DEBIAN_VERSION: buster-slim
   DEBIAN_IMAGE: "$CI_REGISTRY_IMAGE/debian/$DEBIAN_VERSION:$DEBIAN_TAG"
 
@@ -116,10 +116,9 @@ meson-arch-daily:
     - if: '$SCHEDULE == "arch-daily"'
       when: on_success
     - when: never
-  image: archlinux/base
+  image: archlinux/archlinux:base-devel
   before_script:
     - pacman -Syu --noconfirm --needed
-        base-devel
         cairo
         cunit
         libatomic_ops
