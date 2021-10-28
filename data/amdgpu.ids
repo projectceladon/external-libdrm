@@ -65,6 +65,7 @@
 15D8,	92,	AMD Ryzen Embedded R1505G with Radeon Vega Gfx
 15D8,	CF,	AMD Ryzen Embedded R1305G with Radeon Vega Gfx
 15D8,	E4,	AMD Ryzen Embedded R1102G with Radeon Vega Gfx
+163F,	AE,	AMD Custom GPU 0405
 6600,	0,	AMD Radeon HD 8600/8700M
 6600,	81,	AMD Radeon (TM) R7 M370
 6601,	0,	AMD Radeon (TM) HD 8500M/8700M
@@ -135,7 +136,9 @@
 67C2,	01,	AMD Radeon (TM) Pro V7350x2
 67C2,	02,	AMD Radeon (TM) Pro V7300X
 67C4,	00,	AMD Radeon (TM) Pro WX 7100 Graphics
+67C4,	80,	AMD Radeon (TM) E9560/E9565 Graphics
 67C7,	00,	AMD Radeon (TM) Pro WX 5100 Graphics
+67C7,	80,	AMD Radeon (TM) E9390 Graphics
 67C0,	00,	AMD Radeon (TM) Pro WX 7100 Graphics
 67D0,	01,	AMD Radeon (TM) Pro V7350x2
 67D0,	02,	AMD Radeon (TM) Pro V7300X
@@ -271,9 +274,19 @@
 7340,	CF,	Radeon RX 5300
 7341,	00,	AMD Radeon Pro W5500
 7347,	00,	AMD Radeon Pro W5500M
+73A3,	00,	AMD Radeon PRO W6800
+73AF,	C0,	AMD Radeon RX 6900 XT
 73BF,	C0,	AMD Radeon RX 6900 XT
 73BF,	C1,	AMD Radeon RX 6800 XT
 73BF,	C3,	AMD Radeon RX 6800
+73DF,	C1,	AMD Radeon RX 6700 XT
+73DF,	C3,	AMD Radeon RX 6800M
+73DF,	C5,	AMD Radeon RX 6700 XT
+73DF,	CF,	AMD Radeon RX 6700M
+73E1,	00,	AMD Radeon PRO W6600M
+73E3,	00,	AMD Radeon PRO W6600
+73FF,	C1,	AMD Radeon RX 6600 XT
+73FF,	C3,	AMD Radeon RX 6600M
 9874,	C4,	AMD Radeon R7 Graphics
 9874,	C5,	AMD Radeon R6 Graphics
 9874,	C6,	AMD Radeon R6 Graphics
