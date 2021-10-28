@@ -834,6 +834,8 @@ extern int drmGetNodeTypeFromFd(int fd);
 extern int drmPrimeHandleToFD(int fd, uint32_t handle, uint32_t flags, int *prime_fd);
 extern int drmPrimeFDToHandle(int fd, int prime_fd, uint32_t *handle);
 
+extern int drmCloseBufferHandle(int fd, uint32_t handle);
+
 extern char *drmGetPrimaryDeviceNameFromFd(int fd);
 extern char *drmGetRenderDeviceNameFromFd(int fd);
 
@@ -943,6 +945,17 @@ extern int drmSyncobjTransfer(int fd,
 			      uint32_t dst_handle, uint64_t dst_point,
 			      uint32_t src_handle, uint64_t src_point,
 			      uint32_t flags);
+
+extern char *
+drmGetFormatModifierVendor(uint64_t modifier);
+
+extern char *
+drmGetFormatModifierName(uint64_t modifier);
+
+#ifndef fourcc_mod_get_vendor
+#define fourcc_mod_get_vendor(modifier) \
+       (((modifier) >> 56) & 0xff)
+#endif
 
 #if defined(__cplusplus)
 }
