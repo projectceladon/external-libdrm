@@ -1559,8 +1559,8 @@ drm_public int drmAddMap(int fd, drm_handle_t offset, drmSize size, drmMapType t
     memclear(map);
     map.offset  = offset;
     map.size    = size;
-    map.type    = type;
-    map.flags   = flags;
+    map.type    = (enum drm_map_type)type;
+    map.flags   = (enum drm_map_flags)flags;
     if (drmIoctl(fd, DRM_IOCTL_ADD_MAP, &map))
         return -errno;
     if (handle)
@@ -1604,7 +1604,7 @@ drm_public int drmAddBufs(int fd, int count, int size, drmBufDescFlags flags,
     memclear(request);
     request.count     = count;
     request.size      = size;
-    request.flags     = flags;
+    request.flags     = (int)flags;
     request.agp_start = agp_offset;
 
     if (drmIoctl(fd, DRM_IOCTL_ADD_BUFS, &request))
@@ -1888,7 +1888,7 @@ drm_public int drmDMA(int fd, drmDMAReqPtr request)
     dma.send_count      = request->send_count;
     dma.send_indices    = request->send_list;
     dma.send_sizes      = request->send_sizes;
-    dma.flags           = request->flags;
+    dma.flags           = (enum drm_dma_flags)request->flags;
     dma.request_count   = request->request_count;
     dma.request_size    = request->request_size;
     dma.request_indices = request->request_list;
@@ -2825,8 +2825,8 @@ drm_public int drmGetMap(int fd, int idx, drm_handle_t *offset, drmSize *size,
         return -errno;
     *offset = map.offset;
     *size   = map.size;
-    *type   = map.type;
-    *flags  = map.flags;
+    *type   = (drmMapType)map.type;
+    *flags  = (drmMapFlags)map.flags;
     *handle = (unsigned long)map.handle;
     *mtrr   = map.mtrr;
     return 0;
@@ -3377,8 +3377,9 @@ static char *drmGetMinorNameForFD(int fd, int type)
 
     while ((ent = readdir(sysdir))) {
         if (strncmp(ent->d_name, name, len) == 0) {
-            snprintf(dev_name, sizeof(dev_name), DRM_DIR_NAME "/%s",
-                 ent->d_name);
+            if (snprintf(dev_name, sizeof(dev_name), DRM_DIR_NAME "/%s",
+                        ent->d_name) < 0)
+                return NULL;
 
             closedir(sysdir);
             return strdup(dev_name);
@@ -3789,7 +3790,9 @@ static int parse_separate_sysfs_files(int maj, int min,
     get_pci_path(maj, min, pci_path);
 
     for (unsigned i = ignore_revision ? 1 : 0; i < ARRAY_SIZE(attrs); i++) {
-        snprintf(path, PATH_MAX, "%s/%s", pci_path, attrs[i]);
+        if (snprintf(path, PATH_MAX, "%s/%s", pci_path, attrs[i]) < 0)
+            return -errno;
+
         fp = fopen(path, "r");
         if (!fp)
             return -errno;
@@ -3819,7 +3822,9 @@ static int parse_config_sysfs_file(int maj, int min,
 
     get_pci_path(maj, min, pci_path);
 
-    snprintf(path, PATH_MAX, "%s/config", pci_path);
+    if (snprintf(path, PATH_MAX, "%s/config", pci_path) < 0)
+        return -errno;
+
     fd = open(path, O_RDONLY);
     if (fd < 0)
         return -errno;
@@ -4497,19 +4502,16 @@ drm_device_has_rdev(drmDevicePtr device, dev_t find_rdev)
 #define MAX_DRM_NODES 256
 
 /**
- * Get information about the opened drm device
+ * Get information about a device from its dev_t identifier
  *
- * \param fd file descriptor of the drm device
+ * \param find_rdev dev_t identifier of the device
  * \param flags feature/behaviour bitmask
  * \param device the address of a drmDevicePtr where the information
  *               will be allocated in stored
  *
  * \return zero on success, negative error code otherwise.
- *
- * \note Unlike drmGetDevice it does not retrieve the pci device revision field
- * unless the DRM_DEVICE_GET_PCI_REVISION \p flag is set.
  */
-drm_public int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device)
+drm_public int drmGetDeviceFromDevId(dev_t find_rdev, uint32_t flags, drmDevicePtr *device)
 {
 #ifdef __OpenBSD__
     /*
@@ -4518,22 +4520,18 @@ drm_public int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device)
      * Avoid stat'ing all of /dev needlessly by implementing this custom path.
      */
     drmDevicePtr     d;
-    struct stat      sbuf;
     char             node[PATH_MAX + 1];
     const char      *dev_name;
     int              node_type, subsystem_type;
     int              maj, min, n, ret;
 
-    if (fd == -1 || device == NULL)
+    if (device == NULL)
         return -EINVAL;
 
-    if (fstat(fd, &sbuf))
-        return -errno;
+    maj = major(find_rdev);
+    min = minor(find_rdev);
 
-    maj = major(sbuf.st_rdev);
-    min = minor(sbuf.st_rdev);
-
-    if (!drmNodeIsDRM(maj, min) || !S_ISCHR(sbuf.st_mode))
+    if (!drmNodeIsDRM(maj, min))
         return -EINVAL;
 
     node_type = drmGetMinorType(maj, min);
@@ -4566,26 +4564,20 @@ drm_public int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device)
     drmDevicePtr d;
     DIR *sysdir;
     struct dirent *dent;
-    struct stat sbuf;
     int subsystem_type;
     int maj, min;
     int ret, i, node_count;
-    dev_t find_rdev;
 
     if (drm_device_validate_flags(flags))
         return -EINVAL;
 
-    if (fd == -1 || device == NULL)
+    if (device == NULL)
         return -EINVAL;
 
-    if (fstat(fd, &sbuf))
-        return -errno;
+    maj = major(find_rdev);
+    min = minor(find_rdev);
 
-    find_rdev = sbuf.st_rdev;
-    maj = major(sbuf.st_rdev);
-    min = minor(sbuf.st_rdev);
-
-    if (!drmNodeIsDRM(maj, min) || !S_ISCHR(sbuf.st_mode))
+    if (!drmNodeIsDRM(maj, min))
         return -EINVAL;
 
     subsystem_type = drmParseSubsystemType(maj, min);
@@ -4632,6 +4624,35 @@ drm_public int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device)
         return -ENODEV;
     return 0;
 #endif
+}
+
+/**
+ * Get information about the opened drm device
+ *
+ * \param fd file descriptor of the drm device
+ * \param flags feature/behaviour bitmask
+ * \param device the address of a drmDevicePtr where the information
+ *               will be allocated in stored
+ *
+ * \return zero on success, negative error code otherwise.
+ *
+ * \note Unlike drmGetDevice it does not retrieve the pci device revision field
+ * unless the DRM_DEVICE_GET_PCI_REVISION \p flag is set.
+ */
+drm_public int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device)
+{
+    struct stat sbuf;
+
+    if (fd == -1)
+        return -EINVAL;
+
+    if (fstat(fd, &sbuf))
+        return -errno;
+
+    if (!S_ISCHR(sbuf.st_mode))
+        return -EINVAL;
+
+    return drmGetDeviceFromDevId(sbuf.st_rdev, flags, device);
 }
 
 /**
