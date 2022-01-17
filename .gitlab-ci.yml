@@ -213,7 +213,7 @@ x86_64-freebsd-container_prep:
     # the workspace to see details about the failed tests.
     - |
       set +e
-      /app/vmctl exec "pkg info; cd $CI_PROJECT_NAME ; meson build --auto-features=enabled -D nouveau=disabled -D valgrind=disabled && ninja -C build"
+      /app/vmctl exec "pkg info; cd $CI_PROJECT_NAME ; meson build --auto-features=enabled -D etnaviv=disabled -D nouveau=disabled -D valgrind=disabled && ninja -C build"
       set -ex
       scp -r vm:$CI_PROJECT_NAME/build/meson-logs .
       /app/vmctl exec "ninja -C $CI_PROJECT_NAME/build install"

@@ -165,11 +165,16 @@ summary('Tegra', with_tegra)
 
 with_etnaviv = false
 _etnaviv = get_option('etnaviv')
-if _etnaviv.enabled()
-  if not with_atomics
+if not _etnaviv.disabled()
+  if _etnaviv.enabled() and not with_atomics
     error('libdrm_etnaviv requires atomics.')
   endif
-  with_etnaviv = true
+  with_etnaviv = _etnaviv.enabled() or (
+    with_atomics and [
+      'loongarch64', 'mips', 'mips64',
+      'arm', 'aarch64', 'arc',
+    ].contains(host_machine.cpu_family())
+  )
 endif
 summary('Etnaviv', with_etnaviv)
 
