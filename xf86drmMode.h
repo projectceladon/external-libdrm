@@ -381,6 +381,19 @@ extern drmModeConnectorPtr drmModeGetConnectorCurrent(int fd,
 						      uint32_t connector_id);
 
 /**
+ * Get a bitmask of CRTCs a connector is compatible with.
+ *
+ * The bits reference CRTC indices. If the n-th CRTC is compatible with the
+ * connector, the n-th bit will be set. The indices are taken from the array
+ * returned by drmModeGetResources(). The indices are different from the object
+ * IDs.
+ *
+ * Zero is returned on error.
+ */
+extern uint32_t drmModeConnectorGetPossibleCrtcs(int fd,
+                                                 const drmModeConnector *connector);
+
+/**
  * Attaches the given mode to an connector.
  */
 extern int drmModeAttachMode(int fd, uint32_t connectorId, drmModeModeInfoPtr mode_info);

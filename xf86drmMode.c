@@ -610,6 +610,29 @@ drm_public drmModeConnectorPtr drmModeGetConnectorCurrent(int fd, uint32_t conne
 	return _drmModeGetConnector(fd, connector_id, 0);
 }
 
+drm_public uint32_t drmModeConnectorGetPossibleCrtcs(int fd,
+                                                     const drmModeConnector *connector)
+{
+	drmModeEncoder *encoder;
+	int i;
+	uint32_t possible_crtcs;
+
+	possible_crtcs = 0;
+	for (i = 0; i < connector->count_encoders; i++) {
+		encoder = drmModeGetEncoder(fd, connector->encoders[i]);
+		if (!encoder) {
+			return 0;
+		}
+
+		possible_crtcs |= encoder->possible_crtcs;
+		drmModeFreeEncoder(encoder);
+	}
+
+	if (possible_crtcs == 0)
+		errno = ENOENT;
+	return possible_crtcs;
+}
+
 drm_public int drmModeAttachMode(int fd, uint32_t connector_id, drmModeModeInfoPtr mode_info)
 {
 	struct drm_mode_mode_cmd res;

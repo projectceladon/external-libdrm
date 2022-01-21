@@ -103,6 +103,7 @@ drmModeAtomicGetCursor
 drmModeAtomicMerge
 drmModeAtomicSetCursor
 drmModeAttachMode
+drmModeConnectorGetPossibleCrtcs
 drmModeConnectorSetProperty
 drmModeCreateLease
 drmModeCreatePropertyBlob
