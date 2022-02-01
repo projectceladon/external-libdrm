@@ -656,7 +656,7 @@ static struct resources *get_resources(struct device *dev)
 		int num;
 
 		num = asprintf(&connector->name, "%s-%u",
-			 util_lookup_connector_type_name(conn->connector_type),
+			 drmModeGetConnectorTypeName(conn->connector_type),
 			 conn->connector_type_id);
 		if (num < 0)
 			goto error;
