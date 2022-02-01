@@ -475,6 +475,15 @@ extern drmModeObjectListPtr drmModeGetLease(int fd);
 
 extern int drmModeRevokeLease(int fd, uint32_t lessee_id);
 
+/**
+ * Get a string describing a connector type.
+ *
+ * NULL is returned if the connector type is unsupported. Callers should handle
+ * this gracefully, e.g. by falling back to "Unknown" or printing the raw value.
+ */
+extern const char *
+drmModeGetConnectorTypeName(uint32_t connector_type);
+
 #if defined(__cplusplus)
 }
 #endif

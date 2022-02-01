@@ -126,6 +126,7 @@ drmModeFreePropertyBlob
 drmModeFreeResources
 drmModeGetConnector
 drmModeGetConnectorCurrent
+drmModeGetConnectorTypeName
 drmModeGetCrtc
 drmModeGetEncoder
 drmModeGetFB
