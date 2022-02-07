@@ -1348,7 +1348,7 @@ drm_public drmModeAtomicReqPtr drmModeAtomicAlloc(void)
 	return req;
 }
 
-drm_public drmModeAtomicReqPtr drmModeAtomicDuplicate(drmModeAtomicReqPtr old)
+drm_public drmModeAtomicReqPtr drmModeAtomicDuplicate(const drmModeAtomicReqPtr old)
 {
 	drmModeAtomicReqPtr new;
 
@@ -1378,7 +1378,7 @@ drm_public drmModeAtomicReqPtr drmModeAtomicDuplicate(drmModeAtomicReqPtr old)
 }
 
 drm_public int drmModeAtomicMerge(drmModeAtomicReqPtr base,
-                                  drmModeAtomicReqPtr augment)
+                                  const drmModeAtomicReqPtr augment)
 {
 	uint32_t i;
 
@@ -1411,7 +1411,7 @@ drm_public int drmModeAtomicMerge(drmModeAtomicReqPtr base,
 	return 0;
 }
 
-drm_public int drmModeAtomicGetCursor(drmModeAtomicReqPtr req)
+drm_public int drmModeAtomicGetCursor(const drmModeAtomicReqPtr req)
 {
 	if (!req)
 		return -EINVAL;
@@ -1480,7 +1480,7 @@ static int sort_req_list(const void *misc, const void *other)
 		return first->cursor - second->cursor;
 }
 
-drm_public int drmModeAtomicCommit(int fd, drmModeAtomicReqPtr req,
+drm_public int drmModeAtomicCommit(int fd, const drmModeAtomicReqPtr req,
                                    uint32_t flags, void *user_data)
 {
 	drmModeAtomicReqPtr sorted;
