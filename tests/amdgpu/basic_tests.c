@@ -857,6 +857,13 @@ static void amdgpu_command_submission_gfx_separate_ibs(void)
 	amdgpu_bo_list_handle bo_list;
 	amdgpu_va_handle va_handle, va_handle_ce;
 	int r, i = 0;
+	struct drm_amdgpu_info_hw_ip info;
+
+	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_GFX, 0, &info);
+	CU_ASSERT_EQUAL(r, 0);
+
+	if (info.hw_ip_version_major >= 11)
+		return;
 
 	r = amdgpu_cs_ctx_create(device_handle, &context_handle);
 	CU_ASSERT_EQUAL(r, 0);
@@ -948,6 +955,13 @@ static void amdgpu_command_submission_gfx_shared_ib(void)
 	amdgpu_bo_list_handle bo_list;
 	amdgpu_va_handle va_handle;
 	int r, i = 0;
+	struct drm_amdgpu_info_hw_ip info;
+
+	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_GFX, 0, &info);
+	CU_ASSERT_EQUAL(r, 0);
+
+	if (info.hw_ip_version_major >= 11)
+		return;
 
 	r = amdgpu_cs_ctx_create(device_handle, &context_handle);
 	CU_ASSERT_EQUAL(r, 0);
@@ -2070,6 +2084,13 @@ static void amdgpu_command_submission_multi_fence_wait_all(bool wait_all)
 	amdgpu_va_handle va_handle, va_handle_ce;
 	int r;
 	int i = 0, ib_cs_num = 2;
+	struct drm_amdgpu_info_hw_ip info;
+
+	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_GFX, 0, &info);
+	CU_ASSERT_EQUAL(r, 0);
+
+	if (info.hw_ip_version_major >= 11)
+		return;
 
 	r = amdgpu_cs_ctx_create(device_handle, &context_handle);
 	CU_ASSERT_EQUAL(r, 0);
