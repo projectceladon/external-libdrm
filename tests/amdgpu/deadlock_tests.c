@@ -139,11 +139,13 @@ CU_BOOL suite_deadlock_tests_enable(void)
 
 	/*
 	 * Only enable for ASICs supporting GPU reset and for which it's enabled
-	 * by default (currently GFX8/9 dGPUS)
+	 * by default (currently GFX8+ dGPUS and gfx9+ APUs).  Note that Raven1
+	 * did not support GPU reset, but newer variants do.
 	 */
-	if (family_id != AMDGPU_FAMILY_VI &&
-	    family_id != AMDGPU_FAMILY_AI &&
-	    family_id != AMDGPU_FAMILY_CI) {
+	if (family_id == AMDGPU_FAMILY_SI ||
+	    family_id == AMDGPU_FAMILY_KV ||
+	    family_id == AMDGPU_FAMILY_CZ ||
+	    family_id == AMDGPU_FAMILY_RV) {
 		printf("\n\nGPU reset is not enabled for the ASIC, deadlock suite disabled\n");
 		enable = CU_FALSE;
 	}
