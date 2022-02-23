@@ -9,6 +9,5 @@ cc_defaults {
         "intel_decode.c",
         "intel_chipset.c",
         "mm.c",
-	"intel_gvt.c",
     ],
 }

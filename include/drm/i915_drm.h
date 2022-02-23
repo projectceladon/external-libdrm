@@ -564,8 +564,6 @@ typedef struct drm_i915_irq_wait {
  */
 #define I915_PARAM_CS_TIMESTAMP_FREQUENCY 51
 
-#define I915_PARAM_IS_GVT                 55
-
 /*
  * Once upon a time we supposed that writes through the GGTT would be
  * immediately in physical memory (once flushed out of the CPU path). However,
