@@ -226,6 +226,11 @@ if with_freedreno_kgsl and not with_freedreno
   error('cannot enable freedreno-kgsl without freedreno support')
 endif
 config.set10('_GNU_SOURCE', true)
+
+if target_machine.endian() == 'big'
+  config.set('HAVE_BIG_ENDIAN', 1)
+endif
+
 config_file = configure_file(
   configuration : config,
   output : 'config.h',
