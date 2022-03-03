@@ -1155,7 +1155,7 @@ static void set_gamma(struct device *dev, unsigned crtc_id, unsigned fourcc)
 
 	if (fourcc == DRM_FORMAT_C8) {
 		/* TODO: Add C8 support for more patterns */
-		util_smpte_c8_gamma(256, gamma_lut);
+		util_smpte_fill_lut(256, gamma_lut);
 		drmModeCreatePropertyBlob(dev->fd, gamma_lut, sizeof(gamma_lut), &blob_id);
 	} else {
 		/*

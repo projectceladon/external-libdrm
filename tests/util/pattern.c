@@ -605,6 +605,73 @@ static void fill_smpte_rgb16fp(const struct util_rgb_info *rgb, void *mem,
 	}
 }
 
+enum smpte_colors {
+	SMPTE_COLOR_GREY,
+	SMPTE_COLOR_YELLOW,
+	SMPTE_COLOR_CYAN,
+	SMPTE_COLOR_GREEN,
+	SMPTE_COLOR_MAGENTA,
+	SMPTE_COLOR_RED,
+	SMPTE_COLOR_BLUE,
+	SMPTE_COLOR_BLACK,
+	SMPTE_COLOR_IN_PHASE,
+	SMPTE_COLOR_SUPER_WHITE,
+	SMPTE_COLOR_QUADRATURE,
+	SMPTE_COLOR_3PC5,
+	SMPTE_COLOR_11PC5,
+};
+
+static unsigned int smpte_top[7] = {
+	SMPTE_COLOR_GREY,
+	SMPTE_COLOR_YELLOW,
+	SMPTE_COLOR_CYAN,
+	SMPTE_COLOR_GREEN,
+	SMPTE_COLOR_MAGENTA,
+	SMPTE_COLOR_RED,
+	SMPTE_COLOR_BLUE,
+};
+
+static unsigned int smpte_middle[7] = {
+	SMPTE_COLOR_BLUE,
+	SMPTE_COLOR_BLACK,
+	SMPTE_COLOR_MAGENTA,
+	SMPTE_COLOR_BLACK,
+	SMPTE_COLOR_CYAN,
+	SMPTE_COLOR_BLACK,
+	SMPTE_COLOR_GREY,
+};
+
+static unsigned int smpte_bottom[8] = {
+	SMPTE_COLOR_IN_PHASE,
+	SMPTE_COLOR_SUPER_WHITE,
+	SMPTE_COLOR_QUADRATURE,
+	SMPTE_COLOR_BLACK,
+	SMPTE_COLOR_3PC5,
+	SMPTE_COLOR_BLACK,
+	SMPTE_COLOR_11PC5,
+	SMPTE_COLOR_BLACK,
+};
+
+#define EXPAND_COLOR(r, g, b)	{ (r) * 0x101, (g) * 0x101, (b) * 0x101 }
+
+static const struct drm_color_lut smpte_color_lut[] = {
+	[SMPTE_COLOR_GREY] =        EXPAND_COLOR(192, 192, 192),
+	[SMPTE_COLOR_YELLOW] =      EXPAND_COLOR(192, 192,   0),
+	[SMPTE_COLOR_CYAN] =        EXPAND_COLOR(  0, 192, 192),
+	[SMPTE_COLOR_GREEN] =       EXPAND_COLOR(  0, 192,   0),
+	[SMPTE_COLOR_MAGENTA] =     EXPAND_COLOR(192,   0, 192),
+	[SMPTE_COLOR_RED] =         EXPAND_COLOR(192,   0,   0),
+	[SMPTE_COLOR_BLUE] =        EXPAND_COLOR(  0,   0, 192),
+	[SMPTE_COLOR_BLACK] =       EXPAND_COLOR( 19,  19,  19),
+	[SMPTE_COLOR_IN_PHASE] =    EXPAND_COLOR(  0,  33,  76),
+	[SMPTE_COLOR_SUPER_WHITE] = EXPAND_COLOR(255, 255, 255),
+	[SMPTE_COLOR_QUADRATURE] =  EXPAND_COLOR( 50,   0, 106),
+	[SMPTE_COLOR_3PC5] =        EXPAND_COLOR(  9,   9,   9),
+	[SMPTE_COLOR_11PC5] =       EXPAND_COLOR( 29,  29,  29),
+};
+
+#undef EXPAND_COLOR
+
 static void fill_smpte_c8(void *mem, unsigned int width, unsigned int height,
 			  unsigned int stride)
 {
@@ -613,69 +680,40 @@ static void fill_smpte_c8(void *mem, unsigned int width, unsigned int height,
 
 	for (y = 0; y < height * 6 / 9; ++y) {
 		for (x = 0; x < width; ++x)
-			((uint8_t *)mem)[x] = x * 7 / width;
+			((uint8_t *)mem)[x] = smpte_top[x * 7 / width];
 		mem += stride;
 	}
 
 	for (; y < height * 7 / 9; ++y) {
 		for (x = 0; x < width; ++x)
-			((uint8_t *)mem)[x] = 7 + (x * 7 / width);
+			((uint8_t *)mem)[x] = smpte_middle[x * 7 / width];
 		mem += stride;
 	}
 
 	for (; y < height; ++y) {
 		for (x = 0; x < width * 5 / 7; ++x)
 			((uint8_t *)mem)[x] =
-				14 + (x * 4 / (width * 5 / 7));
+				smpte_bottom[x * 4 / (width * 5 / 7)];
 		for (; x < width * 6 / 7; ++x)
 			((uint8_t *)mem)[x] =
-				14 + ((x - width * 5 / 7) * 3
-					      / (width / 7) + 4);
+				smpte_bottom[(x - width * 5 / 7) * 3
+					     / (width / 7) + 4];
 		for (; x < width; ++x)
-			((uint8_t *)mem)[x] = 14 + 7;
+			((uint8_t *)mem)[x] = smpte_bottom[7];
 		mem += stride;
 	}
 }
 
-void util_smpte_c8_gamma(unsigned size, struct drm_color_lut *lut)
+void util_smpte_fill_lut(unsigned int ncolors, struct drm_color_lut *lut)
 {
-	if (size < 7 + 7 + 8) {
-		printf("Error: gamma too small: %d < %d\n", size, 7 + 7 + 8);
+	if (ncolors < ARRAY_SIZE(smpte_color_lut)) {
+		printf("Error: lut too small: %u < %zu\n", ncolors,
+		       ARRAY_SIZE(smpte_color_lut));
 		return;
 	}
-	memset(lut, 0, size * sizeof(struct drm_color_lut));
+	memset(lut, 0, ncolors * sizeof(struct drm_color_lut));
 
-#define FILL_COLOR(idx, r, g, b) \
-	lut[idx].red = (r) * 0x101; \
-	lut[idx].green = (g) * 0x101; \
-	lut[idx].blue = (b) * 0x101
-
-	FILL_COLOR( 0, 192, 192, 192);	/* grey */
-	FILL_COLOR( 1, 192, 192, 0  );	/* yellow */
-	FILL_COLOR( 2, 0,   192, 192);	/* cyan */
-	FILL_COLOR( 3, 0,   192, 0  );	/* green */
-	FILL_COLOR( 4, 192, 0,   192);	/* magenta */
-	FILL_COLOR( 5, 192, 0,   0  );	/* red */
-	FILL_COLOR( 6, 0,   0,   192);	/* blue */
-
-	FILL_COLOR( 7, 0,   0,   192);	/* blue */
-	FILL_COLOR( 8, 19,  19,  19 );	/* black */
-	FILL_COLOR( 9, 192, 0,   192);	/* magenta */
-	FILL_COLOR(10, 19,  19,  19 );	/* black */
-	FILL_COLOR(11, 0,   192, 192);	/* cyan */
-	FILL_COLOR(12, 19,  19,  19 );	/* black */
-	FILL_COLOR(13, 192, 192, 192);	/* grey */
-
-	FILL_COLOR(14, 0,   33,  76);	/* in-phase */
-	FILL_COLOR(15, 255, 255, 255);	/* super white */
-	FILL_COLOR(16, 50,  0,   106);	/* quadrature */
-	FILL_COLOR(17, 19,  19,  19);	/* black */
-	FILL_COLOR(18, 9,   9,   9);	/* 3.5% */
-	FILL_COLOR(19, 19,  19,  19);	/* 7.5% */
-	FILL_COLOR(20, 29,  29,  29);	/* 11.5% */
-	FILL_COLOR(21, 19,  19,  19);	/* black */
-
-#undef FILL_COLOR
+	memcpy(lut, smpte_color_lut, sizeof(smpte_color_lut));
 }
 
 static void fill_smpte(const struct util_format_info *info, void *planes[3],
