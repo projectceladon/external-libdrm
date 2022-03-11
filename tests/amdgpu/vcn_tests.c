@@ -28,6 +28,7 @@
 
 #include "CUnit/Basic.h"
 
+#include <unistd.h>
 #include "util_math.h"
 
 #include "amdgpu_test.h"
@@ -38,6 +39,30 @@
 
 #define IB_SIZE		4096
 #define MAX_RESOURCES	16
+
+#define DECODE_CMD_MSG_BUFFER                              0x00000000
+#define DECODE_CMD_DPB_BUFFER                              0x00000001
+#define DECODE_CMD_DECODING_TARGET_BUFFER                  0x00000002
+#define DECODE_CMD_FEEDBACK_BUFFER                         0x00000003
+#define DECODE_CMD_PROB_TBL_BUFFER                         0x00000004
+#define DECODE_CMD_SESSION_CONTEXT_BUFFER                  0x00000005
+#define DECODE_CMD_BITSTREAM_BUFFER                        0x00000100
+#define DECODE_CMD_IT_SCALING_TABLE_BUFFER                 0x00000204
+#define DECODE_CMD_CONTEXT_BUFFER                          0x00000206
+
+#define DECODE_IB_PARAM_DECODE_BUFFER                      (0x00000001)
+
+#define DECODE_CMDBUF_FLAGS_MSG_BUFFER                     (0x00000001)
+#define DECODE_CMDBUF_FLAGS_DPB_BUFFER                     (0x00000002)
+#define DECODE_CMDBUF_FLAGS_BITSTREAM_BUFFER               (0x00000004)
+#define DECODE_CMDBUF_FLAGS_DECODING_TARGET_BUFFER         (0x00000008)
+#define DECODE_CMDBUF_FLAGS_FEEDBACK_BUFFER                (0x00000010)
+#define DECODE_CMDBUF_FLAGS_IT_SCALING_BUFFER              (0x00000200)
+#define DECODE_CMDBUF_FLAGS_CONTEXT_BUFFER                 (0x00000800)
+#define DECODE_CMDBUF_FLAGS_PROB_TBL_BUFFER                (0x00001000)
+#define DECODE_CMDBUF_FLAGS_SESSION_CONTEXT_BUFFER         (0x00100000)
+
+static bool vcn_dec_sw_ring = false;
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
 #define H264_NAL_TYPE_DP_A_SLICE 2
@@ -62,6 +87,48 @@ struct amdgpu_vcn_bo {
 	uint64_t size;
 	uint8_t *ptr;
 };
+
+typedef struct rvcn_decode_buffer_s {
+	unsigned int valid_buf_flag;
+	unsigned int msg_buffer_address_hi;
+	unsigned int msg_buffer_address_lo;
+	unsigned int dpb_buffer_address_hi;
+	unsigned int dpb_buffer_address_lo;
+	unsigned int target_buffer_address_hi;
+	unsigned int target_buffer_address_lo;
+	unsigned int session_contex_buffer_address_hi;
+	unsigned int session_contex_buffer_address_lo;
+	unsigned int bitstream_buffer_address_hi;
+	unsigned int bitstream_buffer_address_lo;
+	unsigned int context_buffer_address_hi;
+	unsigned int context_buffer_address_lo;
+	unsigned int feedback_buffer_address_hi;
+	unsigned int feedback_buffer_address_lo;
+	unsigned int luma_hist_buffer_address_hi;
+	unsigned int luma_hist_buffer_address_lo;
+	unsigned int prob_tbl_buffer_address_hi;
+	unsigned int prob_tbl_buffer_address_lo;
+	unsigned int sclr_coeff_buffer_address_hi;
+	unsigned int sclr_coeff_buffer_address_lo;
+	unsigned int it_sclr_table_buffer_address_hi;
+	unsigned int it_sclr_table_buffer_address_lo;
+	unsigned int sclr_target_buffer_address_hi;
+	unsigned int sclr_target_buffer_address_lo;
+	unsigned int cenc_size_info_buffer_address_hi;
+	unsigned int cenc_size_info_buffer_address_lo;
+	unsigned int mpeg2_pic_param_buffer_address_hi;
+	unsigned int mpeg2_pic_param_buffer_address_lo;
+	unsigned int mpeg2_mb_control_buffer_address_hi;
+	unsigned int mpeg2_mb_control_buffer_address_lo;
+	unsigned int mpeg2_idct_coeff_buffer_address_hi;
+	unsigned int mpeg2_idct_coeff_buffer_address_lo;
+} rvcn_decode_buffer_t;
+
+typedef struct rvcn_decode_ib_package_s {
+	unsigned int package_size;
+	unsigned int package_type;
+} rvcn_decode_ib_package_t;
+
 
 struct amdgpu_vcn_reg {
 	uint32_t data0;
@@ -105,6 +172,7 @@ static amdgpu_bo_handle ib_handle;
 static amdgpu_va_handle ib_va_handle;
 static uint64_t ib_mc_address;
 static uint32_t *ib_cpu;
+static rvcn_decode_buffer_t *decode_buffer;
 
 static amdgpu_bo_handle resources[MAX_RESOURCES];
 static unsigned num_resources;
@@ -196,7 +264,7 @@ CU_BOOL suite_vcn_tests_enable(void)
 		  info.hw_ip_version_major == 3)
 		vcn_reg_index = 2;
 	else
-		return CU_FALSE;
+		vcn_dec_sw_ring = true;
 
 	return CU_TRUE;
 }
@@ -339,12 +407,80 @@ static void free_resource(struct amdgpu_vcn_bo *vcn_bo)
 
 static void vcn_dec_cmd(uint64_t addr, unsigned cmd, int *idx)
 {
-	ib_cpu[(*idx)++] = reg[vcn_reg_index].data0;
-	ib_cpu[(*idx)++] = addr;
-	ib_cpu[(*idx)++] = reg[vcn_reg_index].data1;
-	ib_cpu[(*idx)++] = addr >> 32;
-	ib_cpu[(*idx)++] = reg[vcn_reg_index].cmd;
-	ib_cpu[(*idx)++] = cmd << 1;
+	if (vcn_dec_sw_ring == false) {
+		ib_cpu[(*idx)++] = reg[vcn_reg_index].data0;
+		ib_cpu[(*idx)++] = addr;
+		ib_cpu[(*idx)++] = reg[vcn_reg_index].data1;
+		ib_cpu[(*idx)++] = addr >> 32;
+		ib_cpu[(*idx)++] = reg[vcn_reg_index].cmd;
+		ib_cpu[(*idx)++] = cmd << 1;
+		return;
+	}
+
+	/* Support decode software ring message */
+	if (!(*idx)) {
+		rvcn_decode_ib_package_t *ib_header = (rvcn_decode_ib_package_t *)ib_cpu;
+
+		ib_header->package_size = sizeof(struct rvcn_decode_buffer_s) +
+			sizeof(struct rvcn_decode_ib_package_s);
+		(*idx)++;
+		ib_header->package_type = (DECODE_IB_PARAM_DECODE_BUFFER);
+		(*idx)++;
+
+		decode_buffer = (rvcn_decode_buffer_t *)&(ib_cpu[*idx]);
+		*idx += sizeof(struct rvcn_decode_buffer_s) / 4;
+		memset(decode_buffer, 0, sizeof(struct rvcn_decode_buffer_s));
+	}
+
+	switch(cmd) {
+		case DECODE_CMD_MSG_BUFFER:
+			decode_buffer->valid_buf_flag |= DECODE_CMDBUF_FLAGS_MSG_BUFFER;
+			decode_buffer->msg_buffer_address_hi = (addr >> 32);
+			decode_buffer->msg_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_DPB_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_DPB_BUFFER);
+			decode_buffer->dpb_buffer_address_hi = (addr >> 32);
+			decode_buffer->dpb_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_DECODING_TARGET_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_DECODING_TARGET_BUFFER);
+			decode_buffer->target_buffer_address_hi = (addr >> 32);
+			decode_buffer->target_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_FEEDBACK_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_FEEDBACK_BUFFER);
+			decode_buffer->feedback_buffer_address_hi = (addr >> 32);
+			decode_buffer->feedback_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_PROB_TBL_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_PROB_TBL_BUFFER);
+			decode_buffer->prob_tbl_buffer_address_hi = (addr >> 32);
+			decode_buffer->prob_tbl_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_SESSION_CONTEXT_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_SESSION_CONTEXT_BUFFER);
+			decode_buffer->session_contex_buffer_address_hi = (addr >> 32);
+			decode_buffer->session_contex_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_BITSTREAM_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_BITSTREAM_BUFFER);
+			decode_buffer->bitstream_buffer_address_hi = (addr >> 32);
+			decode_buffer->bitstream_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_IT_SCALING_TABLE_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_IT_SCALING_BUFFER);
+			decode_buffer->it_sclr_table_buffer_address_hi = (addr >> 32);
+			decode_buffer->it_sclr_table_buffer_address_lo = (addr);
+		break;
+		case DECODE_CMD_CONTEXT_BUFFER:
+			decode_buffer->valid_buf_flag |= (DECODE_CMDBUF_FLAGS_CONTEXT_BUFFER);
+			decode_buffer->context_buffer_address_hi = (addr >> 32);
+			decode_buffer->context_buffer_address_lo = (addr);
+		break;
+		default:
+			printf("Not Support!\n");
+	}
 }
 
 static void amdgpu_cs_vcn_dec_create(void)
@@ -364,15 +500,19 @@ static void amdgpu_cs_vcn_dec_create(void)
 	memcpy(msg_buf.ptr, vcn_dec_create_msg, sizeof(vcn_dec_create_msg));
 
 	len = 0;
-	ib_cpu[len++] = reg[vcn_reg_index].data0;
-	ib_cpu[len++] = msg_buf.addr;
-	ib_cpu[len++] = reg[vcn_reg_index].data1;
-	ib_cpu[len++] = msg_buf.addr >> 32;
-	ib_cpu[len++] = reg[vcn_reg_index].cmd;
-	ib_cpu[len++] = 0;
-	for (; len % 16; ) {
-		ib_cpu[len++] = reg[vcn_reg_index].nop;
+	if (vcn_dec_sw_ring == true) {
+		vcn_dec_cmd(msg_buf.addr, 0, &len);
+	} else {
+		ib_cpu[len++] = reg[vcn_reg_index].data0;
+		ib_cpu[len++] = msg_buf.addr;
+		ib_cpu[len++] = reg[vcn_reg_index].data1;
+		ib_cpu[len++] = msg_buf.addr >> 32;
+		ib_cpu[len++] = reg[vcn_reg_index].cmd;
 		ib_cpu[len++] = 0;
+		for (; len % 16; ) {
+			ib_cpu[len++] = reg[vcn_reg_index].nop;
+			ib_cpu[len++] = 0;
+		}
 	}
 
 	r = submit(len, AMDGPU_HW_IP_VCN_DEC);
@@ -439,11 +579,13 @@ static void amdgpu_cs_vcn_dec_decode(void)
 	vcn_dec_cmd(it_addr, 0x204, &len);
 	vcn_dec_cmd(ctx_addr, 0x206, &len);
 
-	ib_cpu[len++] = reg[vcn_reg_index].cntl;
-	ib_cpu[len++] = 0x1;
-	for (; len % 16; ) {
-		ib_cpu[len++] = reg[vcn_reg_index].nop;
-		ib_cpu[len++] = 0;
+	if (vcn_dec_sw_ring == false) {
+		ib_cpu[len++] = reg[vcn_reg_index].cntl;
+		ib_cpu[len++] = 0x1;
+		for (; len % 16; ) {
+			ib_cpu[len++] = reg[vcn_reg_index].nop;
+			ib_cpu[len++] = 0;
+		}
 	}
 
 	r = submit(len, AMDGPU_HW_IP_VCN_DEC);
@@ -474,15 +616,19 @@ static void amdgpu_cs_vcn_dec_destroy(void)
 	memcpy(msg_buf.ptr, vcn_dec_destroy_msg, sizeof(vcn_dec_destroy_msg));
 
 	len = 0;
-	ib_cpu[len++] = reg[vcn_reg_index].data0;
-	ib_cpu[len++] = msg_buf.addr;
-	ib_cpu[len++] = reg[vcn_reg_index].data1;
-	ib_cpu[len++] = msg_buf.addr >> 32;
-	ib_cpu[len++] = reg[vcn_reg_index].cmd;
-	ib_cpu[len++] = 0;
-	for (; len % 16; ) {
-		ib_cpu[len++] = reg[vcn_reg_index].nop;
+	if (vcn_dec_sw_ring == true) {
+		vcn_dec_cmd(msg_buf.addr, 0, &len);
+	} else {
+		ib_cpu[len++] = reg[vcn_reg_index].data0;
+		ib_cpu[len++] = msg_buf.addr;
+		ib_cpu[len++] = reg[vcn_reg_index].data1;
+		ib_cpu[len++] = msg_buf.addr >> 32;
+		ib_cpu[len++] = reg[vcn_reg_index].cmd;
 		ib_cpu[len++] = 0;
+		for (; len % 16; ) {
+			ib_cpu[len++] = reg[vcn_reg_index].nop;
+			ib_cpu[len++] = 0;
+		}
 	}
 
 	r = submit(len, AMDGPU_HW_IP_VCN_DEC);
