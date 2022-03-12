@@ -1736,6 +1736,8 @@ static int mmap_write(drm_intel_bo *bo, unsigned long offset,
 	}
 
 	assert(map);
+	if (NULL == map)
+		return -1;
 	memcpy((char *)map + offset, buf, length);
 	drm_intel_gem_bo_unmap(bo);
 	return 0;
@@ -1762,6 +1764,8 @@ static int mmap_read(drm_intel_bo *bo, unsigned long offset,
 	}
 
 	assert(map);
+	if (NULL == map)
+		return -1;
 	memcpy(buf, (char *)map + offset, length);
 	drm_intel_gem_bo_unmap(bo);
 	return 0;
