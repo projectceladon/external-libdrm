@@ -182,15 +182,6 @@ if _vc4 != 'false'
 endif
 summary('VC4', with_vc4)
 
-# XXX: Apparently only freebsd and dragonfly bsd actually need this (and
-# gnu/kfreebsd), not openbsd and netbsd
-with_libkms = false
-_libkms = get_option('libkms')
-if _libkms != 'false'
-  with_libkms = _libkms == 'true' or (['linux', 'freebsd', 'dragonfly'].contains(host_machine.system()) and not android)
-endif
-summary('libkms', with_libkms)
-
 # Among others FreeBSD does not have a separate dl library.
 if not cc.has_function('dlsym')
   dep_dl = cc.find_library('dl', required : with_nouveau)
@@ -366,9 +357,6 @@ pkg.generate(
   description : 'Userspace interface to kernel DRM services',
 )
 
-if with_libkms
-  subdir('libkms')
-endif
 if with_intel
   subdir('intel')
 endif
