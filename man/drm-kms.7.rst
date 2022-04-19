@@ -102,7 +102,7 @@ for the selected connector. See the *Examples* section below for more
 information.
 
 All valid modes for a connector can be retrieved with a call to
-drmModeGetConnector3 You need to select the mode you want to use and save it.
+**drmModeGetConnector**\ (3) You need to select the mode you want to use and save it.
 The first mode in the list is the default mode with the highest resolution
 possible and often a suitable choice.
 
