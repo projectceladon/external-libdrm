@@ -133,7 +133,7 @@ CU_BOOL suite_vcn_tests_enable(void)
 
 	if (info.hw_ip_version_major == 1)
 		vcn_reg_index = 0;
-	else if (info.hw_ip_version_major == 2)
+	else if (info.hw_ip_version_major == 2 && info.hw_ip_version_minor == 0)
 		vcn_reg_index = 1;
 	else if ((info.hw_ip_version_major == 2 && info.hw_ip_version_minor >= 5) ||
 		  info.hw_ip_version_major == 3)
