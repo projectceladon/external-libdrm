@@ -209,6 +209,8 @@ static int submit_and_sync() {
 	struct amdgpu_cs_ib_info ib_info = {0};
 	struct amdgpu_cs_fence fence_status = {0};
 	uint32_t expired;
+	uint32_t family_id, chip_id, chip_rev;
+	unsigned gc_ip_type;
 	int r;
 
 	r = amdgpu_bo_list_create(executing_device_handle,
@@ -217,10 +219,17 @@ static int submit_and_sync() {
 	if (r)
 		return r;
 
+	family_id = executing_device_handle->info.family_id;
+	chip_id = executing_device_handle->info.chip_external_rev;
+	chip_rev = executing_device_handle->info.chip_rev;
+
+	gc_ip_type = (asic_is_gfx_pipe_removed(family_id, chip_id, chip_rev)) ?
+		AMDGPU_HW_IP_COMPUTE : AMDGPU_HW_IP_GFX;
+
 	ib_info.ib_mc_address = ib_mc_address;
 	ib_info.size = num_dword;
 
-	ibs_request.ip_type = AMDGPU_HW_IP_GFX;
+	ibs_request.ip_type = gc_ip_type;
 	ibs_request.number_of_ibs = 1;
 	ibs_request.ibs = &ib_info;
 	ibs_request.fence_info.handle = NULL;
@@ -234,7 +243,7 @@ static int submit_and_sync() {
 		return r;
 
 	fence_status.context = context_handle;
-	fence_status.ip_type = AMDGPU_HW_IP_GFX;
+	fence_status.ip_type = gc_ip_type;
 	fence_status.fence = ibs_request.seq_no;
 
 	r = amdgpu_cs_query_fence_status(&fence_status,
