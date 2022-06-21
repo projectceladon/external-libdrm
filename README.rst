@@ -49,3 +49,25 @@ Then use ninja to build and install:
 
 If you are installing into a system location you will need to run install
 separately, and as root.
+
+libdrm porting information
+---------
+
+Usually the drm-intel is ported from external/libdrm in Celadon, but mesa 22.0.3
+requires libdrm 2.4.109 while Celadon only has external/libdrm 2.4.104, so we
+have to port libdrm from AOSP master branch to meet the version requirement:
+
+1.Get the libdrm in AOSP master branch by below, which has already included
+required Android patch from google to make sure it is workable on Android:
+
+    git clone https://android.googlesource.com/platform/external/libdrm
+
+2.Apply our internal/upstream libdrm patches. Internal patches usually are our
+Celadon fix on libdrm, and upstream patches are usually ported from upstream
+to fix some issues. We need to verify whether need to apply these patches or not.
+For internal patch, we need to check if same issue can be reproduced without it.
+For upstream patch, we need to check if target version includes it.
+
+3.Run CTS test with module CtsDrmTestCases, which needs to pass.
+
+4.Merge target libdrm to Celadon repo.
