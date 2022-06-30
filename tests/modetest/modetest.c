@@ -138,8 +138,19 @@ static inline int64_t U642I64(uint64_t val)
 
 static float mode_vrefresh(drmModeModeInfo *mode)
 {
-	return  mode->clock * 1000.00
-			/ (mode->htotal * mode->vtotal);
+	unsigned int num, den;
+
+	num = mode->clock;
+	den = mode->htotal * mode->vtotal;
+
+	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
+		num *= 2;
+	if (mode->flags & DRM_MODE_FLAG_DBLSCAN)
+		den *= 2;
+	if (mode->vscan > 1)
+		den *= mode->vscan;
+
+	return num * 1000.00 / den;
 }
 
 #define bit_name_fn(res)					\
