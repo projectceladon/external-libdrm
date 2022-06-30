@@ -766,11 +766,6 @@ static void fill_smpte(const struct util_format_info *info, void *planes[3],
 	}
 }
 
-/* swap these for big endian.. */
-#define RED   2
-#define GREEN 1
-#define BLUE  0
-
 static void make_pwetty(void *data, unsigned int width, unsigned int height,
 			unsigned int stride, uint32_t format)
 {
