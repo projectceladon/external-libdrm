@@ -646,9 +646,9 @@ void util_smpte_c8_gamma(unsigned size, struct drm_color_lut *lut)
 	memset(lut, 0, size * sizeof(struct drm_color_lut));
 
 #define FILL_COLOR(idx, r, g, b) \
-	lut[idx].red = (r) << 8; \
-	lut[idx].green = (g) << 8; \
-	lut[idx].blue = (b) << 8
+	lut[idx].red = (r) * 0x101; \
+	lut[idx].green = (g) * 0x101; \
+	lut[idx].blue = (b) * 0x101
 
 	FILL_COLOR( 0, 192, 192, 192);	/* grey */
 	FILL_COLOR( 1, 192, 192, 0  );	/* yellow */
