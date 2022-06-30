@@ -659,6 +659,14 @@ static const struct drm_color_lut bw_color_lut[] = {
 	EXPAND_COLOR(255, 255, 255),	/* white */
 };
 
+static const struct drm_color_lut pentile_color_lut[] = {
+	/* PenTile RG-GB */
+	EXPAND_COLOR(  0,   0,   0),	/* black */
+	EXPAND_COLOR(255,   0,   0),	/* red */
+	EXPAND_COLOR(  0, 207,   0),	/* green */
+	EXPAND_COLOR(  0,   0, 255),	/* blue */
+};
+
 static const struct drm_color_lut smpte_color_lut[] = {
 	[SMPTE_COLOR_GREY] =        EXPAND_COLOR(192, 192, 192),
 	[SMPTE_COLOR_YELLOW] =      EXPAND_COLOR(192, 192,   0),
@@ -835,6 +843,92 @@ static void fill_smpte_c1(void *mem, unsigned int width, unsigned int height,
 	free(fsd);
 }
 
+static void write_pixel_2(uint8_t *mem, unsigned int x, unsigned int pixel)
+{
+	unsigned int shift = 6 - 2 * (x & 3);
+	unsigned int mask = 3U << shift;
+
+	mem[x / 4] = (mem[x / 4] & ~mask) | ((pixel << shift) & mask);
+}
+
+static void write_color_2(struct fsd *fsd, uint8_t *mem, unsigned int stride,
+			  unsigned int x, unsigned int index)
+{
+	struct drm_color_lut color = smpte_color_lut[index];
+	unsigned int r, g, b;
+
+	fsd_dither(fsd, &color);
+
+	if (color.red >= 32768) {
+		r = 1;
+		color.red = 65535;
+	} else {
+		r = 0;
+		color.red = 0;
+	}
+	if (color.green >= 32768) {
+		g = 2;
+		color.green = 65535;
+	} else {
+		g = 0;
+		color.green = 0;
+	}
+	if (color.blue >= 32768) {
+		b = 3;
+		color.blue = 65535;
+	} else {
+		b = 0;
+		color.blue = 0;
+	}
+
+	fsd_update(fsd, &color);
+
+	/* Use PenTile RG-GB */
+	write_pixel_2(mem, 2 * x, r);
+	write_pixel_2(mem, 2 * x + 1, g);
+	write_pixel_2(mem + stride, 2 * x, g);
+	write_pixel_2(mem + stride, 2 * x + 1, b);
+}
+
+static void fill_smpte_c2(void *mem, unsigned int width, unsigned int height,
+			  unsigned int stride)
+{
+	struct fsd *fsd = fsd_alloc(width);
+	unsigned int x;
+	unsigned int y;
+
+	/* Half resolution for PenTile RG-GB */
+	width /= 2;
+	height /= 2;
+
+	for (y = 0; y < height * 6 / 9; ++y) {
+		for (x = 0; x < width; ++x)
+			write_color_2(fsd, mem, stride, x, smpte_top[x * 7 / width]);
+		mem += 2 * stride;
+	}
+
+	for (; y < height * 7 / 9; ++y) {
+		for (x = 0; x < width; ++x)
+			write_color_2(fsd, mem, stride, x, smpte_middle[x * 7 / width]);
+		mem += 2 * stride;
+	}
+
+	for (; y < height; ++y) {
+		for (x = 0; x < width * 5 / 7; ++x)
+			write_color_2(fsd, mem, stride, x,
+				      smpte_bottom[x * 4 / (width * 5 / 7)]);
+		for (; x < width * 6 / 7; ++x)
+			write_color_2(fsd, mem, stride, x,
+				      smpte_bottom[(x - width * 5 / 7) * 3 /
+						   (width / 7) + 4]);
+		for (; x < width; ++x)
+			write_color_2(fsd, mem, stride, x, smpte_bottom[7]);
+		mem += 2 * stride;
+	}
+
+	free(fsd);
+}
+
 static void write_pixel_4(uint8_t *mem, unsigned int x, unsigned int pixel)
 {
 	if (x & 1)
@@ -916,8 +1010,10 @@ void util_smpte_fill_lut(unsigned int ncolors, struct drm_color_lut *lut)
 	}
 	memset(lut, 0, ncolors * sizeof(struct drm_color_lut));
 
-	if (ncolors < ARRAY_SIZE(smpte_color_lut))
+	if (ncolors < ARRAY_SIZE(pentile_color_lut))
 		memcpy(lut, bw_color_lut, sizeof(bw_color_lut));
+	else if (ncolors < ARRAY_SIZE(smpte_color_lut))
+		memcpy(lut, pentile_color_lut, sizeof(pentile_color_lut));
 	else
 		memcpy(lut, smpte_color_lut, sizeof(smpte_color_lut));
 }
@@ -931,6 +1027,8 @@ static void fill_smpte(const struct util_format_info *info, void *planes[3],
 	switch (info->format) {
 	case DRM_FORMAT_C1:
 		return fill_smpte_c1(planes[0], width, height, stride);
+	case DRM_FORMAT_C2:
+		return fill_smpte_c2(planes[0], width, height, stride);
 	case DRM_FORMAT_C4:
 		return fill_smpte_c4(planes[0], width, height, stride);
 	case DRM_FORMAT_C8:
