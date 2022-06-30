@@ -40,10 +40,10 @@
 
 static const struct util_format_info format_info[] = {
 	/* Indexed */
-	{ DRM_FORMAT_C1, "C1" },
-	{ DRM_FORMAT_C2, "C2" },
-	{ DRM_FORMAT_C4, "C4" },
-	{ DRM_FORMAT_C8, "C8" },
+	{ DRM_FORMAT_C1, "C1", .ncolors = 2 },
+	{ DRM_FORMAT_C2, "C2", .ncolors = 4 },
+	{ DRM_FORMAT_C4, "C4", .ncolors = 16 },
+	{ DRM_FORMAT_C8, "C8", .ncolors = 256 },
 	/* YUV packed */
 	{ DRM_FORMAT_UYVY, "UYVY", MAKE_YUV_INFO(YUV_YCbCr | YUV_CY, 2, 2, 2) },
 	{ DRM_FORMAT_VYUY, "VYUY", MAKE_YUV_INFO(YUV_YCrCb | YUV_CY, 2, 2, 2) },
