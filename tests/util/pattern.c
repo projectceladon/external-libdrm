@@ -162,7 +162,7 @@ static void fill_smpte_yuv_planar(const struct util_yuv_info *yuv,
 				  unsigned int height, unsigned int stride)
 {
 	const struct color_yuv colors_top[] = {
-		MAKE_YUV_601(191, 192, 192),	/* grey */
+		MAKE_YUV_601(192, 192, 192),	/* grey */
 		MAKE_YUV_601(192, 192, 0),	/* yellow */
 		MAKE_YUV_601(0, 192, 192),	/* cyan */
 		MAKE_YUV_601(0, 192, 0),	/* green */
@@ -265,7 +265,7 @@ static void fill_smpte_yuv_packed(const struct util_yuv_info *yuv, void *mem,
 				  unsigned int stride)
 {
 	const struct color_yuv colors_top[] = {
-		MAKE_YUV_601(191, 192, 192),	/* grey */
+		MAKE_YUV_601(192, 192, 192),	/* grey */
 		MAKE_YUV_601(192, 192, 0),	/* yellow */
 		MAKE_YUV_601(0, 192, 192),	/* cyan */
 		MAKE_YUV_601(0, 192, 0),	/* green */
