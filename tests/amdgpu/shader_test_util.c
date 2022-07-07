@@ -62,6 +62,7 @@ struct shader_test_priv {
 		struct shader_test_draw shader_draw;
 		struct shader_test_dispatch shader_dispatch;
 	};
+	struct shader_test_bo vtx_attributes_mem;
 	struct shader_test_bo cmd;
 	struct shader_test_bo src;
 	struct shader_test_bo dst;
@@ -105,6 +106,9 @@ void shader_test_for_each(amdgpu_device_handle device_handle, unsigned ip,
 		break;
 	case 10:
 		test_info.version = AMDGPU_TEST_GFX_V10;
+		break;
+	case 11:
+		test_info.version = AMDGPU_TEST_GFX_V11;
 		break;
 	default:
 		printf("SKIP ... unsupported gfx version %d\n", info.hw_ip_version_major);
@@ -248,6 +252,45 @@ static void amdgpu_dispatch_init_gfx10(struct shader_test_priv *test_priv)
 	test_priv->cmd_curr = i;
 }
 
+static void amdgpu_dispatch_init_gfx11(struct shader_test_priv *test_priv)
+{
+	int i;
+	uint32_t *ptr = test_priv->cmd.ptr;
+
+	/* Write context control and load shadowing register if necessary */
+	write_context_control(test_priv);
+
+	i = test_priv->cmd_curr;
+
+	/* Issue commands to set default compute state. */
+	/* clear mmCOMPUTE_START_Z - mmCOMPUTE_START_X */
+	ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 3);
+	ptr[i++] = 0x204;
+	i += 3;
+
+	/* clear mmCOMPUTE_TMPRING_SIZE */
+	ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 1);
+	ptr[i++] = 0x218;
+	ptr[i++] = 0;
+
+	/* mmCOMPUTE_REQ_CTRL */
+	ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 1);
+	ptr[i++] = 0x222;
+	ptr[i++] = 0;
+
+	/* mmCOMPUTE_USER_ACCUM_0 .. 3*/
+	ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 4);
+	ptr[i++] = 0x224;
+	i += 4;
+
+	/* mmCOMPUTE_SHADER_CHKSUM */
+	ptr[i++] = PACKET3(PACKET3_SET_UCONFIG_REG, 1);
+	ptr[i++] = 0x22a;
+	ptr[i++] = 0;
+
+	test_priv->cmd_curr = i;
+}
+
 static void amdgpu_dispatch_init(struct shader_test_priv *test_priv)
 {
 	switch (test_priv->info->version) {
@@ -256,6 +299,9 @@ static void amdgpu_dispatch_init(struct shader_test_priv *test_priv)
 		break;
 	case AMDGPU_TEST_GFX_V10:
 		amdgpu_dispatch_init_gfx10(test_priv);
+		break;
+	case AMDGPU_TEST_GFX_V11:
+		amdgpu_dispatch_init_gfx11(test_priv);
 		break;
 	}
 }
@@ -280,6 +326,7 @@ static void amdgpu_dispatch_write_cumask(struct shader_test_priv *test_priv)
 		ptr[i++] = 0xffffffff;
 		break;
 	case AMDGPU_TEST_GFX_V10:
+	case AMDGPU_TEST_GFX_V11:
 		/* set mmCOMPUTE_STATIC_THREAD_MGMT_SE1 - mmCOMPUTE_STATIC_THREAD_MGMT_SE0 */
 		ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG_INDEX, 2);
 		ptr[i++] = 0x30000216;
@@ -415,6 +462,73 @@ static void amdgpu_dispatch_write2hw_gfx10(struct shader_test_priv *test_priv)
 	test_priv->cmd_curr = i;
 }
 
+static void amdgpu_dispatch_write2hw_gfx11(struct shader_test_priv *test_priv)
+{
+	enum amdgpu_test_gfx_version version = test_priv->info->version;
+	const struct shader_test_cs_shader *cs_shader = &shader_test_cs[version][test_priv->shader_dispatch.cs_type];
+	int j, i = test_priv->cmd_curr;
+	uint32_t *ptr = test_priv->cmd.ptr;
+	uint64_t shader_addr = test_priv->shader_dispatch.cs_bo.mc_address;
+
+	/* Writes shader state to HW */
+	/* set mmCOMPUTE_PGM_HI - mmCOMPUTE_PGM_LO */
+	ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 2);
+	ptr[i++] = 0x20c;
+	ptr[i++] = (shader_addr >> 8);
+	ptr[i++] = (shader_addr >> 40);
+
+	/* write sh regs*/
+	for (j = 0; j < cs_shader->num_sh_reg; j++) {
+		ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 1);
+		/* - Gfx9ShRegBase */
+		ptr[i++] = cs_shader->sh_reg[j].reg_offset - shader_test_gfx_info[version].sh_reg_base;
+		ptr[i++] = cs_shader->sh_reg[j].reg_value;
+		if (cs_shader->sh_reg[j].reg_offset == 0x2E12)
+			ptr[i-1] &= ~(1<<29);
+	}
+
+	/* mmCOMPUTE_PGM_RSRC3 */
+	ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 1);
+	ptr[i++] = 0x228;
+	ptr[i++] = 0x3f0;
+
+	/* Write constant data */
+	/* Writes the texture resource constants data to the SGPRs */
+	if (CS_BUFFERCLEAR == test_priv->shader_dispatch.cs_type) {
+		ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 4);
+		ptr[i++] = 0x240;
+		ptr[i++] = test_priv->dst.mc_address;
+		ptr[i++] = (test_priv->dst.mc_address >> 32) | 0x100000;
+		ptr[i++] = test_priv->dst.size / 16;
+		ptr[i++] = 0x1003dfac;
+
+		/* Sets a range of pixel shader constants */
+		ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 4);
+		ptr[i++] = 0x244;
+		ptr[i++] = 0x22222222;
+		ptr[i++] = 0x22222222;
+		ptr[i++] = 0x22222222;
+		ptr[i++] = 0x22222222;
+	} else {
+		ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 4);
+		ptr[i++] = 0x240;
+		ptr[i++] = test_priv->src.mc_address;
+		ptr[i++] = (test_priv->src.mc_address >> 32) | 0x100000;
+		ptr[i++] = test_priv->src.size / 16;
+		ptr[i++] = 0x1003dfac;
+
+		/* Writes the UAV constant data to the SGPRs. */
+		ptr[i++] = PACKET3_COMPUTE(PACKET3_SET_SH_REG, 4);
+		ptr[i++] = 0x244;
+		ptr[i++] = test_priv->dst.mc_address;
+		ptr[i++] = (test_priv->dst.mc_address>> 32) | 0x100000;
+		ptr[i++] = test_priv->dst.size / 16;
+		ptr[i++] = 0x1003dfac;
+	}
+
+	test_priv->cmd_curr = i;
+}
+
 static void amdgpu_dispatch_write2hw(struct shader_test_priv *test_priv)
 {
 	switch (test_priv->info->version) {
@@ -423,6 +537,9 @@ static void amdgpu_dispatch_write2hw(struct shader_test_priv *test_priv)
 		break;
 	case AMDGPU_TEST_GFX_V10:
 		amdgpu_dispatch_write2hw_gfx10(test_priv);
+		break;
+	case AMDGPU_TEST_GFX_V11:
+		amdgpu_dispatch_write2hw_gfx11(test_priv);
 		break;
 	}
 }
@@ -830,6 +947,15 @@ static void amdgpu_draw_init(struct shader_test_priv *test_priv)
 	write_context_control(test_priv);
 	i = test_priv->cmd_curr;
 
+	if (test_priv->info->version == AMDGPU_TEST_GFX_V11) {
+		ptr[i++] = PACKET3(PACKET3_SET_UCONFIG_REG, 1);
+		ptr[i++] = 0x446;
+		ptr[i++] = (test_priv->vtx_attributes_mem.mc_address >> 16);
+		// mmSPI_ATTRIBUTE_RING_SIZE
+		ptr[i++] = PACKET3(PACKET3_SET_UCONFIG_REG, 1);
+		ptr[i++] = 0x447;
+		ptr[i++] = 0x20001;
+	}
 	memcpy(ptr + i, gfx_info->preamble_cache, gfx_info->size_preamble_cache);
 
 	test_priv->cmd_curr = i + gfx_info->size_preamble_cache/sizeof(uint32_t);
@@ -976,6 +1102,60 @@ static void amdgpu_draw_setup_and_write_drawblt_surf_info_gfx10(struct shader_te
 	test_priv->cmd_curr = i;
 }
 
+static void amdgpu_draw_setup_and_write_drawblt_surf_info_gfx11(struct shader_test_priv *test_priv)
+{
+	int i = test_priv->cmd_curr;
+	uint32_t *ptr = test_priv->cmd.ptr;
+
+	/* mmCB_COLOR0_BASE */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x318;
+	ptr[i++] = test_priv->dst.mc_address >> 8;
+	/* mmCB_COLOR0_VIEW .. mmCB_COLOR0_DCC_CONTROL */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 4);
+	ptr[i++] = 0x31b;
+	i++;
+	ptr[i++] = 0x5040e;
+	i += 2;
+	/* mmCB_COLOR0_DCC_BASE */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x325;
+	ptr[i++] = 0;
+	/* mmCB_COLOR0_BASE_EXT */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x390;
+	ptr[i++] = (test_priv->dst.mc_address >> 40) & 0xFF;
+	/* mmCB_COLOR0_DCC_BASE_EXT */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x3a8;
+	ptr[i++] = 0;
+	/* mmCB_COLOR0_ATTRIB2 */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x3b0;
+	ptr[i++] = test_priv->info->hang_slow ? 0x1ffc7ff : 0x7c01f;
+	/* mmCB_COLOR0_ATTRIB3 */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x3b8;
+	ptr[i++] = test_priv->info->hang_slow ? 0x1028000 : 0x1018000;
+	/* mmCB_COLOR0_INFO */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x32b;
+	ptr[i++] = 0;
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x33a;
+	ptr[i++] = 0;
+	/* mmSPI_SHADER_COL_FORMAT */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x1c5;
+	ptr[i++] = 0x9;
+	/* mmDB_Z_INFO */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 2);
+	ptr[i++] = 0x10;
+	i += 2;
+
+	test_priv->cmd_curr = i;
+}
+
 static void amdgpu_draw_setup_and_write_drawblt_surf_info(struct shader_test_priv *test_priv)
 {
 	switch (test_priv->info->version) {
@@ -984,6 +1164,9 @@ static void amdgpu_draw_setup_and_write_drawblt_surf_info(struct shader_test_pri
 		break;
 	case AMDGPU_TEST_GFX_V10:
 		amdgpu_draw_setup_and_write_drawblt_surf_info_gfx10(test_priv);
+		break;
+	case AMDGPU_TEST_GFX_V11:
+		amdgpu_draw_setup_and_write_drawblt_surf_info_gfx11(test_priv);
 		break;
 	}
 }
@@ -1068,6 +1251,41 @@ static void amdgpu_draw_setup_and_write_drawblt_state_gfx10(struct shader_test_p
 	test_priv->cmd_curr = i;
 }
 
+static void amdgpu_draw_setup_and_write_drawblt_state_gfx11(struct shader_test_priv *test_priv)
+{
+	int i = test_priv->cmd_curr;
+	uint32_t *ptr = test_priv->cmd.ptr;
+	const struct shader_test_gfx_info *gfx_info = &shader_test_gfx_info[test_priv->info->version];
+
+	/* mmPA_SC_TILE_STEERING_OVERRIDE */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0xd7;
+	ptr[i++] = 0;
+
+	ptr[i++] = 0xffff1000;
+	ptr[i++] = 0xc0021000;
+
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0xd7;
+	i++;
+
+	/* mmPA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0 */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 16);
+	ptr[i++] = 0x2fe;
+	i += 16;
+
+	/* mmPA_SC_CENTROID_PRIORITY_0 */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 2);
+	ptr[i++] = 0x2f5;
+	i += 2;
+
+	memcpy(ptr + i, gfx_info->cached_cmd, gfx_info->size_cached_cmd);
+	if (test_priv->info->hang_slow)
+		*(ptr + i + 12) = 0x8000800;
+
+	test_priv->cmd_curr = i + gfx_info->size_cached_cmd/sizeof(uint32_t);
+}
+
 static void amdgpu_draw_setup_and_write_drawblt_state(struct shader_test_priv *test_priv)
 {
 	switch (test_priv->info->version) {
@@ -1076,6 +1294,9 @@ static void amdgpu_draw_setup_and_write_drawblt_state(struct shader_test_priv *t
 		break;
 	case AMDGPU_TEST_GFX_V10:
 		amdgpu_draw_setup_and_write_drawblt_state_gfx10(test_priv);
+		break;
+	case AMDGPU_TEST_GFX_V11:
+		amdgpu_draw_setup_and_write_drawblt_state_gfx11(test_priv);
 		break;
 	}
 }
@@ -1215,6 +1436,104 @@ static void amdgpu_draw_vs_RectPosTexFast_write2hw_gfx10(struct shader_test_priv
 	test_priv->cmd_curr = i;
 }
 
+
+static void amdgpu_draw_vs_RectPosTexFast_write2hw_gfx11(struct shader_test_priv *test_priv)
+{
+	int i = test_priv->cmd_curr;
+	uint32_t *ptr = test_priv->cmd.ptr;
+	const struct shader_test_gfx_info *gfx_info = &shader_test_gfx_info[test_priv->info->version];
+	uint64_t shader_addr = test_priv->shader_draw.vs_bo.mc_address;
+	const struct shader_test_vs_shader *shader = &shader_test_vs[test_priv->info->version][test_priv->shader_draw.vs_type];
+	enum ps_type ps = test_priv->shader_draw.ps_type;
+	int j, offset;
+
+	/* mmPA_CL_VS_OUT_CNTL */
+	ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+	ptr[i++] = 0x207;
+	ptr[i++] = 0;
+
+	/* mmSPI_SHADER_PGM_RSRC3_GS */
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG_INDEX, 1);
+	ptr[i++] = 0x30000087;
+	ptr[i++] = 0xffff;
+	/* mmSPI_SHADER_PGM_RSRC4_GS */
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG_INDEX, 1);
+	ptr[i++] = 0x30000081;
+	ptr[i++] = 0x1fff0001;
+
+	/* mmSPI_SHADER_PGM_LO_ES */
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 2);
+	ptr[i++] = 0xc8;
+	ptr[i++] = shader_addr >> 8;
+	ptr[i++] = shader_addr >> 40;
+
+	/* write sh reg */
+	for (j = 0; j < shader->num_sh_reg; j++) {
+		ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 1);
+		ptr[i++] = shader->sh_reg[j].reg_offset - gfx_info->sh_reg_base;
+		ptr[i++] = shader->sh_reg[j].reg_value;
+	}
+	/* write context reg */
+	for (j = 0; j < shader->num_context_reg; j++) {
+		switch (shader->context_reg[j].reg_offset) {
+		case 0xA1B1: //mmSPI_VS_OUT_CONFIG
+			ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+			ptr[i++] = shader->context_reg[j].reg_offset - gfx_info->context_reg_base;
+			ptr[i++] = 2;
+			break;
+		case 0xA1C3: //mmSPI_SHADER_POS_FORMAT
+			ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+			ptr[i++] = shader->context_reg[j].reg_offset - gfx_info->context_reg_base;
+			ptr[i++] = 4;
+			break;
+		case 0xA2E4: //mmVGT_GS_INSTANCE_CNT
+		case 0xA2CE: //mmVGT_GS_MAX_VERT_OUT
+			break;
+		default:
+			ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+			ptr[i++] = shader->context_reg[j].reg_offset - gfx_info->context_reg_base;
+			ptr[i++] = shader->context_reg[j].reg_value;
+			break;
+		}
+	}
+
+	// write constant
+	// dst rect
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 4);
+	ptr[i++] = 0x8c;
+	i += 2;
+	ptr[i++] = test_priv->info->hang_slow ? 0x45000000 : 0x42000000;
+	ptr[i++] = test_priv->info->hang_slow ? 0x45000000 : 0x42000000;
+	// src rect
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 4);
+	ptr[i++] = 0x90;
+	i += 2;
+	if (ps == PS_CONST) {
+		i += 2;
+	} else if (ps == PS_TEX) {
+		ptr[i++] = 0x3f800000;
+		ptr[i++] = 0x3f800000;
+	}
+
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 4);
+	ptr[i++] = 0x94;
+	i += 4;
+	// vtx_attributes_mem
+	ptr[i++] = 0xc02f1000;
+	offset = i * sizeof(uint32_t);
+	i += 44;
+	ptr[i++] = test_priv->vtx_attributes_mem.mc_address & 0xffffffff;
+	ptr[i++] = 0xc0100000 | ((test_priv->vtx_attributes_mem.mc_address >> 32) & 0xffff);
+	ptr[i++] = test_priv->vtx_attributes_mem.size / 16;
+	ptr[i++] = 0x2043ffac;
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG_OFFSET, 2);
+	ptr[i++] = 0x98;
+	ptr[i++] = offset;
+	i++;
+
+	test_priv->cmd_curr = i;
+}
+
 static void amdgpu_draw_vs_RectPosTexFast_write2hw(struct shader_test_priv *test_priv)
 {
 	switch (test_priv->info->version) {
@@ -1223,6 +1542,9 @@ static void amdgpu_draw_vs_RectPosTexFast_write2hw(struct shader_test_priv *test
 		break;
 	case AMDGPU_TEST_GFX_V10:
 		amdgpu_draw_vs_RectPosTexFast_write2hw_gfx10(test_priv);
+		break;
+	case AMDGPU_TEST_GFX_V11:
+		amdgpu_draw_vs_RectPosTexFast_write2hw_gfx11(test_priv);
 		break;
 	}
 }
@@ -1291,12 +1613,71 @@ static void amdgpu_draw_ps_write2hw_gfx9_10(struct shader_test_priv *test_priv)
 	test_priv->cmd_curr = i;
 }
 
+static void amdgpu_draw_ps_write2hw_gfx11(struct shader_test_priv *test_priv)
+{
+	int i, j;
+	uint64_t shader_addr = test_priv->shader_draw.ps_bo.mc_address;
+	enum amdgpu_test_gfx_version version = test_priv->info->version;
+	const struct shader_test_ps_shader *ps = &shader_test_ps[version][test_priv->shader_draw.ps_type];
+	uint32_t *ptr = test_priv->cmd.ptr;
+	uint32_t export_shader_offset;
+
+	i = test_priv->cmd_curr;
+
+	/* SPI_SHADER_PGM_LO_PS
+	   SPI_SHADER_PGM_HI_PS */
+	shader_addr >>= 8;
+	if (!test_priv->info->hang) {
+		export_shader_offset = (round_up_size(ps->shader_size) * 9) >> 8;
+		shader_addr += export_shader_offset;
+	}
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 2);
+	ptr[i++] = 0x8;
+	ptr[i++] = shader_addr & 0xffffffff;
+	ptr[i++] = (shader_addr >> 32) & 0xffffffff;
+	/* mmSPI_SHADER_PGM_RSRC3_PS */
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG_INDEX, 1);
+	ptr[i++] = 0x30000007;
+	ptr[i++] = 0xffff;
+	/* mmSPI_SHADER_PGM_RSRC4_PS */
+	ptr[i++] = PACKET3(PACKET3_SET_SH_REG_INDEX, 1);
+	ptr[i++] = 0x30000001;
+	ptr[i++] = 0x3fffff;
+
+	for (j = 0; j < ps->num_sh_reg; j++) {
+		ptr[i++] = PACKET3(PACKET3_SET_SH_REG, 1);
+		ptr[i++] = ps->sh_reg[j].reg_offset - shader_test_gfx_info[version].sh_reg_base;
+		ptr[i++] = ps->sh_reg[j].reg_value;
+	}
+
+	for (j = 0; j < ps->num_context_reg; j++) {
+		/* !mmSPI_SHADER_COL_FORMAT */
+		if (ps->context_reg[j].reg_offset != 0xA1C5) {
+			ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+			ptr[i++] = ps->context_reg[j].reg_offset - shader_test_gfx_info[version].context_reg_base;
+			ptr[i++] = ps->context_reg[j].reg_value;
+		}
+
+		/* mmSPI_PS_INPUT_ADDR */
+		if (ps->context_reg[j].reg_offset == 0xA1B4) {
+			ptr[i++] = PACKET3(PACKET3_SET_CONTEXT_REG, 1);
+			ptr[i++] = 0x1b3;
+			ptr[i++] = 2;
+		}
+	}
+
+	test_priv->cmd_curr = i;
+}
+
 static void amdgpu_draw_ps_write2hw(struct shader_test_priv *test_priv)
 {
 	switch (test_priv->info->version) {
 	case AMDGPU_TEST_GFX_V9:
 	case AMDGPU_TEST_GFX_V10:
 		amdgpu_draw_ps_write2hw_gfx9_10(test_priv);
+		break;
+	case AMDGPU_TEST_GFX_V11:
+		amdgpu_draw_ps_write2hw_gfx11(test_priv);
 		break;
 	}
 }
@@ -1327,6 +1708,16 @@ static void amdgpu_draw_draw(struct shader_test_priv *test_priv)
 		ptr[i++] = 0x242;
 		ptr[i++] = 0x11;
 		break;
+	case AMDGPU_TEST_GFX_V11:
+		/* mmGE_CNTL */
+		ptr[i++] = PACKET3(PACKET3_SET_UCONFIG_REG, 1);
+		ptr[i++] = 0x25b;
+		ptr[i++] = 0x80fc80;
+		/* mmVGT_PRIMITIVE_TYPE */
+		ptr[i++] = PACKET3(PACKET3_SET_UCONFIG_REG, 1);
+		ptr[i++] = 0x242;
+		ptr[i++] = 0x11;
+		break;
 	}
 
 	ptr[i++] = PACKET3(PACKET3_DRAW_INDEX_AUTO, 1);
@@ -1344,7 +1735,8 @@ static void amdgpu_memset_draw_test(struct shader_test_info *test_info)
 	struct shader_test_bo *vs_bo = &(test_priv.shader_draw.vs_bo);
 	struct shader_test_bo *dst = &(test_priv.dst);
 	struct shader_test_bo *cmd = &(test_priv.cmd);
-	amdgpu_bo_handle resources[4];
+	struct shader_test_bo *vtx_attributes_mem = &(test_priv.vtx_attributes_mem);
+	amdgpu_bo_handle resources[5];
 	uint8_t *ptr_dst;
 	uint32_t *ptr_cmd;
 	int i, r;
@@ -1391,6 +1783,14 @@ static void amdgpu_memset_draw_test(struct shader_test_info *test_info)
 	r = shader_test_bo_alloc(test_info->device_handle, dst);
 	CU_ASSERT_EQUAL(r, 0);
 
+	if (test_info->version == AMDGPU_TEST_GFX_V11) {
+		vtx_attributes_mem->size = 0x4040000;
+		vtx_attributes_mem->heap = AMDGPU_GEM_DOMAIN_VRAM;
+
+		r = shader_test_bo_alloc(test_info->device_handle, vtx_attributes_mem);
+		CU_ASSERT_EQUAL(r, 0);
+	}
+
 	amdgpu_draw_init(&test_priv);
 
 	amdgpu_draw_setup_and_write_drawblt_surf_info(&test_priv);
@@ -1423,6 +1823,8 @@ static void amdgpu_memset_draw_test(struct shader_test_info *test_info)
 	resources[i++] = ps_bo->bo;
 	resources[i++] = vs_bo->bo;
 	resources[i++] = cmd->bo;
+	if (vtx_attributes_mem->size)
+		resources[i++] = vtx_attributes_mem->bo;
 	r = amdgpu_bo_list_create(test_info->device_handle, i, resources, NULL, &bo_list);
 	CU_ASSERT_EQUAL(r, 0);
 
@@ -1465,6 +1867,11 @@ static void amdgpu_memset_draw_test(struct shader_test_info *test_info)
 	i = dst->size / 2;
 	CU_ASSERT_EQUAL(memcmp(ptr_dst + i, cptr, 16), 0);
 
+	if (vtx_attributes_mem->size) {
+		r = shader_test_bo_free(vtx_attributes_mem);
+		CU_ASSERT_EQUAL(r, 0);
+	}
+
 	r = shader_test_bo_free(dst);
 	CU_ASSERT_EQUAL(r, 0);
 
@@ -1490,7 +1897,8 @@ static void amdgpu_memcpy_draw_test(struct shader_test_info *test_info)
 	struct shader_test_bo *src = &(test_priv.src);
 	struct shader_test_bo *dst = &(test_priv.dst);
 	struct shader_test_bo *cmd = &(test_priv.cmd);
-	amdgpu_bo_handle resources[5];
+	struct shader_test_bo *vtx_attributes_mem = &(test_priv.vtx_attributes_mem);
+	amdgpu_bo_handle resources[6];
 	uint8_t *ptr_dst;
 	uint8_t *ptr_src;
 	uint32_t *ptr_cmd;
@@ -1551,6 +1959,14 @@ static void amdgpu_memcpy_draw_test(struct shader_test_info *test_info)
 	r = shader_test_bo_alloc(test_info->device_handle, dst);
 	CU_ASSERT_EQUAL(r, 0);
 
+	if (test_info->version == AMDGPU_TEST_GFX_V11) {
+		vtx_attributes_mem->size = 0x4040000;
+		vtx_attributes_mem->heap = AMDGPU_GEM_DOMAIN_VRAM;
+
+		r = shader_test_bo_alloc(test_info->device_handle, vtx_attributes_mem);
+		CU_ASSERT_EQUAL(r, 0);
+	}
+
 	amdgpu_draw_init(&test_priv);
 
 	amdgpu_draw_setup_and_write_drawblt_surf_info(&test_priv);
@@ -1584,6 +2000,16 @@ static void amdgpu_memcpy_draw_test(struct shader_test_info *test_info)
 		ptr_cmd[i++] = test_info->hang_slow ? 0 : 0x400;
 		i++;
 		break;
+	case AMDGPU_TEST_GFX_V11:
+		ptr_cmd[i++] = 0xc;
+		ptr_cmd[i++] = src->mc_address >> 8;
+		ptr_cmd[i++] = src->mc_address >> 40 | 0xc4b00000;
+		ptr_cmd[i++] = test_info->hang_slow ? 0x1ffc1ff : 0x7c007;
+		ptr_cmd[i++] = test_info->hang_slow ? 0x90a00fac : 0x90600fac;
+		i += 2;
+		ptr_cmd[i++] = 0x400;
+		i++;
+		break;
 	}
 
 	ptr_cmd[i++] = PACKET3(PACKET3_SET_SH_REG, 4);
@@ -1609,6 +2035,8 @@ static void amdgpu_memcpy_draw_test(struct shader_test_info *test_info)
 	resources[i++] = ps_bo->bo;
 	resources[i++] = vs_bo->bo;
 	resources[i++] = cmd->bo;
+	if (vtx_attributes_mem->size)
+		resources[i++] = vtx_attributes_mem->bo;
 	r = amdgpu_bo_list_create(test_info->device_handle, i, resources, NULL, &bo_list);
 	CU_ASSERT_EQUAL(r, 0);
 
@@ -1653,6 +2081,11 @@ static void amdgpu_memcpy_draw_test(struct shader_test_info *test_info)
 
 	r = amdgpu_bo_list_destroy(bo_list);
 	CU_ASSERT_EQUAL(r, 0);
+
+	if (vtx_attributes_mem->size) {
+		r = shader_test_bo_free(vtx_attributes_mem);
+		CU_ASSERT_EQUAL(r, 0);
+	}
 
 	r = shader_test_bo_free(src);
 	CU_ASSERT_EQUAL(r, 0);

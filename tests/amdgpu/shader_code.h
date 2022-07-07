@@ -31,6 +31,7 @@
 enum amdgpu_test_gfx_version {
 	AMDGPU_TEST_GFX_V9 = 0,
 	AMDGPU_TEST_GFX_V10,
+	AMDGPU_TEST_GFX_V11,
 	AMDGPU_TEST_GFX_MAX,
 };
 
@@ -60,6 +61,7 @@ struct reg_info {
 #include "shader_code_hang.h"
 #include "shader_code_gfx9.h"
 #include "shader_code_gfx10.h"
+#include "shader_code_gfx11.h"
 
 struct shader_test_cs_shader {
 	const uint32_t *shader;
@@ -100,6 +102,10 @@ static const struct shader_test_cs_shader shader_test_cs[AMDGPU_TEST_GFX_MAX][2]
 	{{bufferclear_cs_shader_gfx10, sizeof(bufferclear_cs_shader_gfx10), bufferclear_cs_shader_registers_gfx9, ARRAY_SIZE(bufferclear_cs_shader_registers_gfx9)},
 	// gfx10, cs_buffercopy
 	{buffercopy_cs_shader_gfx10, sizeof(bufferclear_cs_shader_gfx10), bufferclear_cs_shader_registers_gfx9, ARRAY_SIZE(bufferclear_cs_shader_registers_gfx9)}},
+	// gfx11, cs_bufferclear
+	{{bufferclear_cs_shader_gfx11, sizeof(bufferclear_cs_shader_gfx11), bufferclear_cs_shader_registers_gfx11, ARRAY_SIZE(bufferclear_cs_shader_registers_gfx11)},
+	// gfx11, cs_buffercopy
+	{buffercopy_cs_shader_gfx11, sizeof(bufferclear_cs_shader_gfx11), bufferclear_cs_shader_registers_gfx11, ARRAY_SIZE(bufferclear_cs_shader_registers_gfx11)}},
 };
 
 #define SHADER_PS_INFO(_ps, _n) \
@@ -112,6 +118,7 @@ static const struct shader_test_cs_shader shader_test_cs[AMDGPU_TEST_GFX_MAX][2]
 static const struct shader_test_ps_shader shader_test_ps[AMDGPU_TEST_GFX_MAX][2] = {
 	{SHADER_PS_INFO(const, 9), SHADER_PS_INFO(tex, 9)},
 	{SHADER_PS_INFO(const, 10), SHADER_PS_INFO(tex, 10)},
+	{SHADER_PS_INFO(const, 11), SHADER_PS_INFO(tex, 11)},
 };
 
 #define SHADER_VS_INFO(_vs, _n) \
@@ -121,6 +128,7 @@ static const struct shader_test_ps_shader shader_test_ps[AMDGPU_TEST_GFX_MAX][2]
 static const struct shader_test_vs_shader shader_test_vs[AMDGPU_TEST_GFX_MAX][1] = {
 	{SHADER_VS_INFO(RectPosTexFast, 9)},
 	{SHADER_VS_INFO(RectPosTexFast, 10)},
+	{SHADER_VS_INFO(RectPosTexFast, 11)},
 };
 
 struct shader_test_gfx_info {
@@ -140,5 +148,6 @@ struct shader_test_gfx_info {
 static struct shader_test_gfx_info shader_test_gfx_info[AMDGPU_TEST_GFX_MAX] = {
 	{SHADER_TEST_GFX_INFO(9),},
 	{SHADER_TEST_GFX_INFO(10),},
+	{SHADER_TEST_GFX_INFO(11),},
 };
 #endif
