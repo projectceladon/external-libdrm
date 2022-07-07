@@ -511,66 +511,25 @@ static void amdgpu_illegal_mem_access()
 
 static void amdgpu_dispatch_hang_gfx(void)
 {
-	amdgpu_dispatch_hang_helper(device_handle, AMDGPU_HW_IP_GFX);
+	amdgpu_test_dispatch_hang_helper(device_handle, AMDGPU_HW_IP_GFX);
 }
-
 static void amdgpu_dispatch_hang_compute(void)
 {
-	amdgpu_dispatch_hang_helper(device_handle, AMDGPU_HW_IP_COMPUTE);
+	amdgpu_test_dispatch_hang_helper(device_handle, AMDGPU_HW_IP_COMPUTE);
 }
-
 static void amdgpu_dispatch_hang_slow_gfx(void)
 {
-	amdgpu_dispatch_hang_slow_helper(device_handle, AMDGPU_HW_IP_GFX);
+	amdgpu_test_dispatch_hang_slow_helper(device_handle, AMDGPU_HW_IP_GFX);
 }
-
 static void amdgpu_dispatch_hang_slow_compute(void)
 {
-	amdgpu_dispatch_hang_slow_helper(device_handle, AMDGPU_HW_IP_COMPUTE);
+	amdgpu_test_dispatch_hang_slow_helper(device_handle, AMDGPU_HW_IP_COMPUTE);
 }
-
 static void amdgpu_draw_hang_gfx(void)
 {
-	int r;
-	struct drm_amdgpu_info_hw_ip info;
-	uint32_t ring_id, version;
-
-	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_GFX, 0, &info);
-	CU_ASSERT_EQUAL(r, 0);
-	if (!info.available_rings)
-		printf("SKIP ... as there's no graphic ring\n");
-
-	version = info.hw_ip_version_major;
-	if (version != 9 && version != 10) {
-		printf("SKIP ... unsupported gfx version %d\n", version);
-		return;
-	}
-
-	for (ring_id = 0; (1 << ring_id) & info.available_rings; ring_id++) {
-		amdgpu_memcpy_draw_test(device_handle, ring_id, version, 0);
-		amdgpu_memcpy_draw_test(device_handle, ring_id, version, 1);
-		amdgpu_memcpy_draw_test(device_handle, ring_id, version, 0);
-	}
+	amdgpu_test_draw_hang_helper(device_handle);
 }
-
 static void amdgpu_draw_hang_slow_gfx(void)
 {
-	struct drm_amdgpu_info_hw_ip info;
-	uint32_t ring_id, version;
-	int r;
-
-	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_GFX, 0, &info);
-	CU_ASSERT_EQUAL(r, 0);
-
-	version = info.hw_ip_version_major;
-	if (version != 9 && version != 10) {
-		printf("SKIP ... unsupported gfx version %d\n", version);
-		return;
-	}
-
-	for (ring_id = 0; (1 << ring_id) & info.available_rings; ring_id++) {
-		amdgpu_memcpy_draw_test(device_handle, ring_id, version, 0);
-		amdgpu_memcpy_draw_hang_slow_test(device_handle, ring_id, version);
-		amdgpu_memcpy_draw_test(device_handle, ring_id, version, 0);
-	}
+	amdgpu_test_draw_hang_slow_helper(device_handle);
 }
