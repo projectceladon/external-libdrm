@@ -1337,6 +1337,7 @@ static void make_pwetty(void *data, unsigned int width, unsigned int height,
 		cairo_format = CAIRO_FORMAT_ARGB32;
 		break;
 	case DRM_FORMAT_RGB565:
+	case DRM_FORMAT_RGB565 | DRM_FORMAT_BIG_ENDIAN:
 	case DRM_FORMAT_BGR565:
 		cairo_format = CAIRO_FORMAT_RGB16_565;
 		swap16 = fb_foreign_endian(format);
