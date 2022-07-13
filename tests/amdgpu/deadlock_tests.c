@@ -125,6 +125,7 @@ static void amdgpu_dispatch_hang_slow_compute(void);
 static void amdgpu_draw_hang_gfx(void);
 static void amdgpu_draw_hang_slow_gfx(void);
 static void amdgpu_hang_sdma(void);
+static void amdgpu_hang_slow_sdma(void);
 
 CU_BOOL suite_deadlock_tests_enable(void)
 {
@@ -210,6 +211,7 @@ CU_TestInfo deadlock_tests[] = {
 	{ "gfx ring bad draw test (set amdgpu.lockup_timeout=50)", amdgpu_draw_hang_gfx },
 	{ "gfx ring slow bad draw test (set amdgpu.lockup_timeout=50)", amdgpu_draw_hang_slow_gfx },
 	{ "sdma ring corrupted header test (set amdgpu.lockup_timeout=50)", amdgpu_hang_sdma },
+	{ "sdma ring slow linear copy test (set amdgpu.lockup_timeout=50)", amdgpu_hang_slow_sdma },
 	CU_TEST_INFO_NULL,
 };
 
@@ -536,7 +538,10 @@ static void amdgpu_draw_hang_slow_gfx(void)
 	amdgpu_test_draw_hang_slow_helper(device_handle);
 }
 
-static void amdgpu_hang_sdma(void)
+#define DMA_CORRUPTED_HEADER_HANG	1
+#define DMA_SLOW_LINEARCOPY_HANG	2
+
+static void amdgpu_hang_sdma_helper(unsigned hang_type)
 {
 	const int sdma_write_length = 1024;
 	amdgpu_context_handle context_handle;
@@ -554,8 +559,8 @@ static void amdgpu_hang_sdma(void)
 	amdgpu_va_handle bo1_va_handle, bo2_va_handle;
 	amdgpu_va_handle va_handle;
 	struct drm_amdgpu_info_hw_ip hw_ip_info;
-	int i, r;
-	uint32_t expired;
+	int i, j, r;
+	uint32_t expired, ib_size;
 
 	r = amdgpu_query_hw_ip_info(device_handle, AMDGPU_HW_IP_DMA, 0, &hw_ip_info);
 	CU_ASSERT_EQUAL(r, 0);
@@ -563,7 +568,12 @@ static void amdgpu_hang_sdma(void)
 	r = amdgpu_cs_ctx_create(device_handle, &context_handle);
 	CU_ASSERT_EQUAL(r, 0);
 
-	r = amdgpu_bo_alloc_and_map(device_handle, 4096, 4096,
+	if (hang_type == DMA_CORRUPTED_HEADER_HANG)
+		ib_size = 4096;
+	else
+		ib_size = 4096 * 0x20000;
+
+	r = amdgpu_bo_alloc_and_map(device_handle, ib_size, 4096,
 				    AMDGPU_GEM_DOMAIN_GTT, 0,
 				    &ib_result_handle, &ib_result_cpu,
 				    &ib_result_mc_address, &va_handle);
@@ -601,13 +611,32 @@ static void amdgpu_hang_sdma(void)
 	/* fulfill PM4: with bad copy linear header */
 	ptr = ib_result_cpu;
 	i = 0;
-	ptr[i++] = 0x23decd3d;
-	ptr[i++] = sdma_write_length - 1;
-	ptr[i++] = 0;
-	ptr[i++] = 0xffffffff & bo1_mc;
-	ptr[i++] = (0xffffffff00000000 & bo1_mc) >> 32;
-	ptr[i++] = 0xffffffff & bo2_mc;
-	ptr[i++] = (0xffffffff00000000 & bo2_mc) >> 32;
+	if (hang_type == DMA_CORRUPTED_HEADER_HANG) {
+		ptr[i++] = 0x23decd3d;
+		ptr[i++] = sdma_write_length - 1;
+		ptr[i++] = 0;
+		ptr[i++] = 0xffffffff & bo1_mc;
+		ptr[i++] = (0xffffffff00000000 & bo1_mc) >> 32;
+		ptr[i++] = 0xffffffff & bo2_mc;
+		ptr[i++] = (0xffffffff00000000 & bo2_mc) >> 32;
+	} else {
+		for (j = 1; j < 0x20000; j++) {
+			ptr[i++] = 0x1;
+			ptr[i++] = sdma_write_length - 1;
+			ptr[i++] = 0;
+			ptr[i++] = 0xffffffff & bo1_mc;
+			ptr[i++] = (0xffffffff00000000 & bo1_mc) >> 32;
+			ptr[i++] = 0xffffffff & bo2_mc;
+			ptr[i++] = (0xffffffff00000000 & bo2_mc) >> 32;
+			ptr[i++] = 0x1;
+			ptr[i++] = sdma_write_length - 1;
+			ptr[i++] = 0;
+			ptr[i++] = 0xffffffff & bo2_mc;
+			ptr[i++] = (0xffffffff00000000 & bo2_mc) >> 32;
+			ptr[i++] = 0xffffffff & bo1_mc;
+			ptr[i++] = (0xffffffff00000000 & bo1_mc) >> 32;
+		}
+	}
 
 	/* exec command */
 	memset(&ib_info, 0, sizeof(struct amdgpu_cs_ib_info));
@@ -655,4 +684,13 @@ static void amdgpu_hang_sdma(void)
 	/* end of test */
 	r = amdgpu_cs_ctx_free(context_handle);
 	CU_ASSERT_EQUAL(r, 0);
+}
+
+static void amdgpu_hang_sdma(void)
+{
+	amdgpu_hang_sdma_helper(DMA_CORRUPTED_HEADER_HANG);
+}
+static void amdgpu_hang_slow_sdma(void)
+{
+	amdgpu_hang_sdma_helper(DMA_SLOW_LINEARCOPY_HANG);
 }
