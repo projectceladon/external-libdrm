@@ -128,6 +128,7 @@ struct device {
 
 	int use_atomic;
 	drmModeAtomicReq *req;
+	int32_t writeback_fence_fd;
 };
 
 static inline int64_t U642I64(uint64_t val)
@@ -811,6 +812,8 @@ struct pipe_arg {
 	struct crtc *crtc;
 	unsigned int fb_id[2], current_fb_id;
 	struct timeval start;
+	unsigned int out_fb_id;
+	struct bo *out_bo;
 
 	int swap_count;
 };
@@ -1441,6 +1444,24 @@ static int pipe_resolve_connectors(struct device *dev, struct pipe_arg *pipe)
 	return 0;
 }
 
+static bool pipe_has_writeback_connector(struct device *dev, struct pipe_arg *pipes,
+		unsigned int count)
+{
+	drmModeConnector *connector;
+	unsigned int i, j;
+
+	for (j = 0; j < count; j++) {
+		struct pipe_arg *pipe = &pipes[j];
+
+		for (i = 0; i < pipe->num_cons; i++) {
+			connector = get_connector_by_id(dev, pipe->con_ids[i]);
+			if (connector && connector->connector_type == DRM_MODE_CONNECTOR_WRITEBACK)
+				return true;
+		}
+	}
+	return false;
+}
+
 static int pipe_attempt_connector(struct device *dev, drmModeConnector *con,
 		struct pipe_arg *pipe)
 {
@@ -1503,7 +1524,8 @@ static int pipe_find_preferred(struct device *dev, struct pipe_arg **out_pipes)
 
 	for (i = 0; i < res->count_connectors; i++) {
 		con = res->connectors[i].connector;
-		if (!con || con->connection != DRM_MODE_CONNECTED)
+		if (!con || con->connection != DRM_MODE_CONNECTED ||
+		    con->connector_type == DRM_MODE_CONNECTOR_WRITEBACK)
 			continue;
 		connected++;
 	}
@@ -1658,6 +1680,75 @@ static void set_mode(struct device *dev, struct pipe_arg *pipes, unsigned int co
 
 				atomic_set_planes(dev, &plane_args, 1, false);
 			}
+		}
+	}
+}
+
+static void writeback_config(struct device *dev, struct pipe_arg *pipes, unsigned int count)
+{
+	drmModeConnector *connector;
+	unsigned int i, j;
+
+	for (j = 0; j < count; j++) {
+		struct pipe_arg *pipe = &pipes[j];
+
+		for (i = 0; i < pipe->num_cons; i++) {
+			connector = get_connector_by_id(dev, pipe->con_ids[i]);
+			if (connector->connector_type == DRM_MODE_CONNECTOR_WRITEBACK) {
+				if (!pipe->mode) {
+					fprintf(stderr, "no mode for writeback\n");
+					return;
+				}
+				bo_fb_create(dev->fd, pipes[j].fourcc,
+					     pipe->mode->hdisplay, pipe->mode->vdisplay,
+					     UTIL_PATTERN_PLAIN,
+					     &pipe->out_bo, &pipe->out_fb_id);
+				add_property(dev, pipe->con_ids[i], "WRITEBACK_FB_ID",
+					     pipe->out_fb_id);
+				add_property(dev, pipe->con_ids[i], "WRITEBACK_OUT_FENCE_PTR",
+					     (uintptr_t)(&dev->writeback_fence_fd));
+			}
+		}
+	}
+}
+
+static int poll_writeback_fence(int fd, int timeout)
+{
+	struct pollfd fds = { fd, POLLIN };
+	int ret;
+
+	do {
+		ret = poll(&fds, 1, timeout);
+		if (ret > 0) {
+			if (fds.revents & (POLLERR | POLLNVAL))
+				return -EINVAL;
+
+			return 0;
+		} else if (ret == 0) {
+			return -ETIMEDOUT;
+		} else {
+			ret = -errno;
+			if (ret == -EINTR || ret == -EAGAIN)
+				continue;
+			return ret;
+		}
+	} while (1);
+
+}
+
+static void dump_output_fb(struct device *dev, struct pipe_arg *pipes, char *dump_path,
+			   unsigned int count)
+{
+	drmModeConnector *connector;
+	unsigned int i, j;
+
+	for (j = 0; j < count; j++) {
+		struct pipe_arg *pipe = &pipes[j];
+
+		for (i = 0; i < pipe->num_cons; i++) {
+			connector = get_connector_by_id(dev, pipe->con_ids[i]);
+			if (connector->connector_type == DRM_MODE_CONNECTOR_WRITEBACK)
+				bo_dump(pipe->out_bo, dump_path);
 		}
 	}
 }
@@ -1990,7 +2081,7 @@ static void parse_fill_patterns(char *arg)
 
 static void usage(char *name)
 {
-	fprintf(stderr, "usage: %s [-acDdefMPpsCvrw]\n", name);
+	fprintf(stderr, "usage: %s [-acDdefMoPpsCvrw]\n", name);
 
 	fprintf(stderr, "\n Query options:\n\n");
 	fprintf(stderr, "\t-c\tlist connectors\n");
@@ -2007,6 +2098,7 @@ static void usage(char *name)
 	fprintf(stderr, "\t-w <obj_id>:<prop_name>:<value>\tset property\n");
 	fprintf(stderr, "\t-a \tuse atomic API\n");
 	fprintf(stderr, "\t-F pattern1,pattern2\tspecify fill patterns\n");
+	fprintf(stderr, "\t-o <desired file path> \t Dump writeback output buffer to file\n");
 
 	fprintf(stderr, "\n Generic options:\n\n");
 	fprintf(stderr, "\t-d\tdrop master after mode set\n");
@@ -2017,7 +2109,7 @@ static void usage(char *name)
 	exit(0);
 }
 
-static char optstr[] = "acdD:efF:M:P:ps:Cvrw:";
+static char optstr[] = "acdD:efF:M:P:ps:Cvrw:o:";
 
 int main(int argc, char **argv)
 {
@@ -2040,6 +2132,7 @@ int main(int argc, char **argv)
 	struct property_arg *prop_args = NULL;
 	unsigned int args = 0;
 	int ret;
+	char *dump_path = NULL;
 
 	memset(&dev, 0, sizeof dev);
 
@@ -2077,6 +2170,9 @@ int main(int argc, char **argv)
 			module = optarg;
 			/* Preserve the default behaviour of dumping all information. */
 			args--;
+			break;
+		case 'o':
+			dump_path = optarg;
 			break;
 		case 'P':
 			plane_args = realloc(plane_args,
@@ -2163,6 +2259,7 @@ int main(int argc, char **argv)
 
 	if (use_atomic) {
 		ret = drmSetClientCap(dev.fd, DRM_CLIENT_CAP_ATOMIC, 1);
+		drmSetClientCap(dev.fd, DRM_CLIENT_CAP_WRITEBACK_CONNECTORS, 1);
 		if (ret) {
 			fprintf(stderr, "no atomic modesetting support: %s\n", strerror(errno));
 			drmClose(dev.fd);
@@ -2204,6 +2301,15 @@ int main(int argc, char **argv)
 			if (set_preferred || count)
 				set_mode(&dev, pipe_args, count);
 
+			if (dump_path) {
+				if (!pipe_has_writeback_connector(&dev, pipe_args, count)) {
+					fprintf(stderr, "No writeback connector found, can not dump.\n");
+					return 1;
+				}
+
+				writeback_config(&dev, pipe_args, count);
+			}
+
 			if (plane_count)
 				atomic_set_planes(&dev, plane_args, plane_count, false);
 
@@ -2211,6 +2317,18 @@ int main(int argc, char **argv)
 			if (ret) {
 				fprintf(stderr, "Atomic Commit failed [1]\n");
 				return 1;
+			}
+
+			/*
+			 * Since only writeback connectors have an output fb, this should only be
+			 * called for writeback.
+			 */
+			if (dump_path) {
+				ret = poll_writeback_fence(dev.writeback_fence_fd, 1000);
+				if (ret)
+					fprintf(stderr, "Poll for writeback error: %d. Skipping Dump.\n",
+							ret);
+				dump_output_fb(&dev, pipe_args, dump_path, count);
 			}
 
 			if (test_vsync)
@@ -2241,6 +2359,11 @@ int main(int argc, char **argv)
 
 		drmModeAtomicFree(dev.req);
 	} else {
+		if (dump_path) {
+			fprintf(stderr, "writeback / dump is only supported in atomic mode\n");
+			return 1;
+		}
+
 		if (set_preferred || count || plane_count) {
 			uint64_t cap = 0;
 
