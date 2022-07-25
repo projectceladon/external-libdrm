@@ -24,7 +24,7 @@ project(
   version : '2.4.112',
   license : 'MIT',
   meson_version : '>= 0.53',
-  default_options : ['buildtype=debugoptimized', 'c_std=c99'],
+  default_options : ['buildtype=debugoptimized', 'c_std=c11'],
 )
 
 pkg = import('pkgconfig')
