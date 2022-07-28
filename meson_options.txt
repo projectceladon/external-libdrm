@@ -134,3 +134,9 @@ option(
   value : false,
   description : 'Enable support for using udev instead of mknod.',
 )
+option(
+  'tests',
+  type : 'boolean',
+  value : true,
+  description : 'Build test programs.',
+)

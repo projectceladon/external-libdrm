@@ -34,6 +34,7 @@ config = configuration_data()
 config.set10('UDEV', get_option('udev'))
 with_freedreno_kgsl = get_option('freedreno-kgsl')
 with_install_tests = get_option('install-test-programs')
+with_tests = get_option('tests')
 
 if ['freebsd', 'dragonfly', 'netbsd'].contains(host_machine.system())
   dep_pthread_stubs = dependency('pthread-stubs', version : '>= 0.4')
@@ -391,4 +392,6 @@ if with_man_pages
   subdir('man')
 endif
 subdir('data')
-subdir('tests')
+if with_tests
+  subdir('tests')
+endif
