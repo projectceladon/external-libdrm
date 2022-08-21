@@ -5106,3 +5106,38 @@ drmGetFormatModifierName(uint64_t modifier)
 
     return modifier_found;
 }
+
+/**
+ * Get a human-readable name for a DRM FourCC format.
+ *
+ * \param format The format.
+ * \return A malloc'ed string containing the format name. Caller is responsible
+ * for freeing it.
+ */
+drm_public char *
+drmGetFormatName(uint32_t format)
+{
+    char *str;
+    size_t str_size, i;
+    char a, b, c, d;
+
+    if (format == DRM_FORMAT_INVALID)
+        return strdup("INVALID");
+
+    str_size = 5;
+    str = malloc(str_size);
+    if (!str)
+        return NULL;
+
+    a = (char) ((format >> 0) & 0xFF);
+    b = (char) ((format >> 8) & 0xFF);
+    c = (char) ((format >> 16) & 0xFF);
+    d = (char) ((format >> 24) & 0xFF);
+    snprintf(str, str_size, "%c%c%c%c", a, b, c, d);
+
+    /* Trim spaces at the end */
+    for (i = 3; i > 0 && str[i] == ' '; i--)
+        str[i] = '\0';
+
+    return str;
+}

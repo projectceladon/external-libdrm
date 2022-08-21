@@ -203,3 +203,4 @@ drmUpdateDrawableInfo
 drmWaitVBlank
 drmGetFormatModifierName
 drmGetFormatModifierVendor
+drmGetFormatName
