@@ -44,7 +44,7 @@ stages:
     FDO_DISTRIBUTION_EXEC: 'pip3 install meson==0.53.0'
     # bump this tag every time you change something which requires rebuilding the
     # base image
-    FDO_DISTRIBUTION_TAG: "2022-01-19.0"
+    FDO_DISTRIBUTION_TAG: "2022-08-22.0"
 
 .debian-x86_64:
   extends:
@@ -71,7 +71,7 @@ stages:
     FDO_DISTRIBUTION_PACKAGES: 'meson ninja pkgconf libpciaccess libpthread-stubs py39-docutils cairo'
     # bump this tag every time you change something which requires rebuilding the
     # base image
-    FDO_DISTRIBUTION_TAG: "2021-11-10.1"
+    FDO_DISTRIBUTION_TAG: "2022-08-22.0"
 
 .freebsd-x86_64:
   extends:
