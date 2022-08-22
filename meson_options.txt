@@ -79,23 +79,17 @@ option(
 )
 option(
   'cairo-tests',
-  type : 'combo',
-  value : 'auto',
-  choices : ['true', 'false', 'auto'],
+  type : 'feature',
   description : 'Enable support for Cairo rendering in tests.',
 )
 option(
   'man-pages',
-  type : 'combo',
-  value : 'auto',
-  choices : ['true', 'false', 'auto'],
+  type : 'feature',
   description : 'Enable manpage generation and installation.',
 )
 option(
   'valgrind',
-  type : 'combo',
-  value : 'auto',
-  choices : ['true', 'false', 'auto'],
+  type : 'feature',
   description : 'Build libdrm with valgrind support.',
 )
 option(

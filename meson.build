@@ -237,30 +237,18 @@ libdrm_c_args = cc.get_supported_arguments([
 
 dep_pciaccess = dependency('pciaccess', version : '>= 0.10', required : with_intel)
 dep_cunit = dependency('cunit', version : '>= 2.1', required : false)
-_cairo_tests = get_option('cairo-tests')
-if _cairo_tests != 'false'
-  dep_cairo = dependency('cairo', required : _cairo_tests == 'true')
-  with_cairo_tests = dep_cairo.found()
-else
-  dep_cairo = []
-  with_cairo_tests = false
-endif
-_valgrind = get_option('valgrind')
-if _valgrind != 'false'
-  if with_freedreno
-    dep_valgrind = dependency('valgrind', required : _valgrind == 'true', version : '>=3.10.0')
-  else
-    dep_valgrind = dependency('valgrind', required : _valgrind == 'true')
-  endif
-  with_valgrind = dep_valgrind.found()
-else
-  dep_valgrind = []
-  with_valgrind = false
-endif
+dep_cairo = dependency('cairo', required : get_option('cairo-tests'))
+with_cairo_tests = dep_cairo.found()
 
-with_man_pages = get_option('man-pages')
-prog_rst2man = find_program('rst2man', 'rst2man.py', required: with_man_pages == 'true')
-with_man_pages = with_man_pages != 'false' and prog_rst2man.found()
+valgrind_version = []
+if with_freedreno
+  valgrind_version = '>=3.10.0'
+endif
+dep_valgrind = dependency('valgrind', required : get_option('valgrind'), version : valgrind_version)
+with_valgrind = dep_valgrind.found()
+
+prog_rst2man = find_program('rst2man', 'rst2man.py', required: get_option('man-pages'))
+with_man_pages = prog_rst2man.found()
 
 config.set10('HAVE_VISIBILITY', cc.has_function_attribute('visibility:hidden'))
 
