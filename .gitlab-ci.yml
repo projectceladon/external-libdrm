@@ -191,22 +191,10 @@ x86_64-freebsd-container_prep:
     GIT_DEPTH: 10
   script:
     - meson build
-        -D amdgpu=true
+        --auto-features=enabled
         -D cairo-tests=true
-        -D etnaviv=true
-        -D exynos=true
-        -D freedreno=true
-        -D freedreno-kgsl=true
-        -D intel=true
         -D man-pages=true
-        -D nouveau=true
-        -D omap=true
-        -D radeon=true
-        -D tegra=true
         -D udev=true
-        -D valgrind=auto
-        -D vc4=true
-        -D vmwgfx=true
     - ninja -C build
     - ninja -C build test
     - DESTDIR=$PWD/install ninja -C build install
@@ -227,7 +215,7 @@ x86_64-freebsd-container_prep:
     # the workspace to see details about the failed tests.
     - |
       set +e
-      /app/vmctl exec "pkg info; cd $CI_PROJECT_NAME ; meson build -D amdgpu=true -D cairo-tests=true -D intel=true -D man-pages=true -D nouveau=false -D radeon=true -D valgrind=auto && ninja -C build"
+      /app/vmctl exec "pkg info; cd $CI_PROJECT_NAME ; meson build --auto-features=enabled -D nouveau=disabled -D cairo-tests=true -D man-pages=true -D valgrind=false && ninja -C build"
       set -ex
       scp -r vm:$CI_PROJECT_NAME/build/meson-logs .
       /app/vmctl exec "ninja -C $CI_PROJECT_NAME/build install"

@@ -85,19 +85,19 @@ config.set10('HAVE_LIB_ATOMIC_OPS', lib_atomics)
 
 with_intel = false
 _intel = get_option('intel')
-if _intel != 'false'
-  if _intel == 'true' and not with_atomics
+if not _intel.disabled()
+  if _intel.enabled() and not with_atomics
     error('libdrm_intel requires atomics.')
   else
-    with_intel = (_intel == 'true' or host_machine.cpu_family().startswith('x86')) and with_atomics
+    with_intel = (_intel.enabled() or host_machine.cpu_family().startswith('x86')) and with_atomics
   endif
 endif
 summary('Intel', with_intel)
 
 with_radeon = false
 _radeon = get_option('radeon')
-if _radeon != 'false'
-  if _radeon == 'true' and not with_atomics
+if not _radeon.disabled()
+  if _radeon.enabled() and not with_atomics
     error('libdrm_radeon requires atomics.')
   endif
   with_radeon = with_atomics
@@ -106,8 +106,8 @@ summary('Radeon', with_radeon)
 
 with_amdgpu = false
 _amdgpu = get_option('amdgpu')
-if _amdgpu != 'false'
-  if _amdgpu == 'true' and not with_atomics
+if not _amdgpu.disabled()
+  if _amdgpu.enabled() and not with_atomics
     error('libdrm_amdgpu requires atomics.')
   endif
   with_amdgpu = with_atomics
@@ -116,8 +116,8 @@ summary('AMDGPU', with_amdgpu)
 
 with_nouveau = false
 _nouveau = get_option('nouveau')
-if _nouveau != 'false'
-  if _nouveau == 'true' and not with_atomics
+if not _nouveau.disabled()
+  if _nouveau.enabled() and not with_atomics
     error('libdrm_nouveau requires atomics.')
   endif
   with_nouveau = with_atomics
@@ -126,14 +126,14 @@ summary('Nouveau', with_nouveau)
 
 with_vmwgfx = false
 _vmwgfx = get_option('vmwgfx')
-if _vmwgfx != 'false'
+if not _vmwgfx.disabled()
   with_vmwgfx = true
 endif
 summary('vmwgfx', with_vmwgfx)
 
 with_omap = false
 _omap = get_option('omap')
-if _omap == 'true'
+if _omap.enabled()
   if not with_atomics
     error('libdrm_omap requires atomics.')
   endif
@@ -143,11 +143,11 @@ summary('OMAP', with_omap)
 
 with_freedreno = false
 _freedreno = get_option('freedreno')
-if _freedreno != 'false'
-  if _freedreno == 'true' and not with_atomics
+if not _freedreno.disabled()
+  if _freedreno.enabled() and not with_atomics
     error('libdrm_freedreno requires atomics.')
   else
-    with_freedreno = (_freedreno == 'true' or ['arm', 'aarch64'].contains(host_machine.cpu_family())) and with_atomics
+    with_freedreno = (_freedreno.enabled() or ['arm', 'aarch64'].contains(host_machine.cpu_family())) and with_atomics
   endif
 endif
 summary('Freedreno', with_freedreno)
@@ -155,7 +155,7 @@ summary('Freedreon-kgsl', with_freedreno_kgsl)
 
 with_tegra = false
 _tegra = get_option('tegra')
-if _tegra == 'true'
+if _tegra.enabled()
   if not with_atomics
     error('libdrm_tegra requires atomics.')
   endif
@@ -165,7 +165,7 @@ summary('Tegra', with_tegra)
 
 with_etnaviv = false
 _etnaviv = get_option('etnaviv')
-if _etnaviv == 'true'
+if _etnaviv.enabled()
   if not with_atomics
     error('libdrm_etnaviv requires atomics.')
   endif
@@ -173,13 +173,13 @@ if _etnaviv == 'true'
 endif
 summary('Etnaviv', with_etnaviv)
 
-with_exynos = get_option('exynos') == 'true'
+with_exynos = get_option('exynos').enabled()
 summary('EXYNOS', with_exynos)
 
 with_vc4 = false
 _vc4 = get_option('vc4')
-if _vc4 != 'false'
-  with_vc4 = _vc4 == 'true' or ['arm', 'aarch64'].contains(host_machine.cpu_family())
+if not _vc4.disabled()
+  with_vc4 = _vc4.enabled() or ['arm', 'aarch64'].contains(host_machine.cpu_family())
 endif
 summary('VC4', with_vc4)
 
