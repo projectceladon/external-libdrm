@@ -68,4 +68,4 @@ done
 apt-get purge -y $EPHEMERAL
 
 # Test that the oldest Meson version we claim to support is still supported
-pip3 install meson==0.46
+pip3 install meson==0.53
