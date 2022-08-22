@@ -89,7 +89,7 @@ if _intel != 'false'
   if _intel == 'true' and not with_atomics
     error('libdrm_intel requires atomics.')
   else
-    with_intel = _intel == 'true' or host_machine.cpu_family().startswith('x86')
+    with_intel = (_intel == 'true' or host_machine.cpu_family().startswith('x86')) and with_atomics
   endif
 endif
 summary('Intel', with_intel)
@@ -100,7 +100,7 @@ if _radeon != 'false'
   if _radeon == 'true' and not with_atomics
     error('libdrm_radeon requires atomics.')
   endif
-  with_radeon = true
+  with_radeon = with_atomics
 endif
 summary('Radeon', with_radeon)
 
@@ -110,7 +110,7 @@ if _amdgpu != 'false'
   if _amdgpu == 'true' and not with_atomics
     error('libdrm_amdgpu requires atomics.')
   endif
-  with_amdgpu = true
+  with_amdgpu = with_atomics
 endif
 summary('AMDGPU', with_amdgpu)
 
@@ -120,7 +120,7 @@ if _nouveau != 'false'
   if _nouveau == 'true' and not with_atomics
     error('libdrm_nouveau requires atomics.')
   endif
-  with_nouveau = true
+  with_nouveau = with_atomics
 endif
 summary('Nouveau', with_nouveau)
 
@@ -147,7 +147,7 @@ if _freedreno != 'false'
   if _freedreno == 'true' and not with_atomics
     error('libdrm_freedreno requires atomics.')
   else
-    with_freedreno = _freedreno == 'true' or ['arm', 'aarch64'].contains(host_machine.cpu_family())
+    with_freedreno = (_freedreno == 'true' or ['arm', 'aarch64'].contains(host_machine.cpu_family())) and with_atomics
   endif
 endif
 summary('Freedreno', with_freedreno)
