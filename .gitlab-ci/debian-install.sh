@@ -26,14 +26,18 @@ EOF
 
 apt-get dist-upgrade -y
 
+EPHEMERAL="
+  meson \
+  "
+
 apt-get install -y --no-remove \
+  $EPHEMERAL \
   build-essential \
   docbook-xsl \
   libatomic-ops-dev \
   libcairo2-dev \
   libcunit1-dev \
   libpciaccess-dev \
-  meson \
   ninja-build \
   pkg-config \
   python3 \
@@ -61,6 +65,7 @@ for arch in ${CROSS_ARCHITECTURES[@]}; do
   fi
 done
 
+apt-get purge -y $EPHEMERAL
 
 # Test that the oldest Meson version we claim to support is still supported
 pip3 install meson==0.46
