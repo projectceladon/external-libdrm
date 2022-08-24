@@ -75,13 +75,13 @@ struct shader_test_cs_shader {
 struct shader_test_ps_shader {
 	const uint32_t *shader;
 	unsigned shader_size;
-	const uint32_t patchinfo_code_size;
+	uint32_t patchinfo_code_size;
 	const uint32_t *patchinfo_code;
 	const uint32_t *patchinfo_code_offset;
 	const struct reg_info *sh_reg;
-	const uint32_t num_sh_reg;
+	uint32_t num_sh_reg;
 	const struct reg_info *context_reg;
-	const uint32_t num_context_reg;
+	uint32_t num_context_reg;
 };
 
 struct shader_test_vs_shader {
