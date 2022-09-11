@@ -27,6 +27,10 @@ project(
   default_options : ['buildtype=debugoptimized', 'c_std=c11'],
 )
 
+if ['windows', 'darwin'].contains(host_machine.system())
+  error('unsupported OS: @0@'.format(host_machine.system()))
+endif
+
 pkg = import('pkgconfig')
 
 config = configuration_data()
