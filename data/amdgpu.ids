@@ -4,67 +4,67 @@
 # device_id,	revision_id,	product_name        <-- single tab after comma
 
 1.0.0
-15DD,	C3,	AMD Radeon Vega 3 Graphics
-15DD,	CB,	AMD Radeon Vega 3 Graphics
-15DD,	CE,	AMD Radeon Vega 3 Graphics
-15DD,	D8,	AMD Radeon Vega 3 Graphics
-15DD,	CC,	AMD Radeon Vega 6 Graphics
-15DD,	D9,	AMD Radeon Vega 6 Graphics
-15DD,	C2,	AMD Radeon Vega 8 Graphics
-15DD,	C4,	AMD Radeon Vega 8 Graphics
-15DD,	C8,	AMD Radeon Vega 8 Graphics
-15DD,	CA,	AMD Radeon Vega 8 Graphics
-15DD,	D1,	AMD Radeon Vega 8 Graphics
-15DD,	D5,	AMD Radeon Vega 8 Graphics
-15DD,	D7,	AMD Radeon Vega 8 Graphics
-15DD,	C3,	AMD Radeon Vega 10 Graphics
-15DD,	D0,	AMD Radeon Vega 10 Graphics
-15DD,	C1,	AMD Radeon Vega 11 Graphics
-15DD,	C6,	AMD Radeon Vega 11 Graphics
-15DD,	C9,	AMD Radeon Vega 11 Graphics
-15DD,	D3,	AMD Radeon Vega 11 Graphics
-15DD,	D6,	AMD Radeon Vega 11 Graphics
-15DD,	81,	AMD Ryzen Embedded V1807B with Radeon Vega Gfx
-15DD,	82,	AMD Ryzen Embedded V1756B with Radeon Vega Gfx
-15DD,	83,	AMD Ryzen Embedded V1605B with Radeon Vega Gfx
-15DD,	85,	AMD Ryzen Embedded V1202B with Radeon Vega Gfx
+15D8,	91,	AMD Ryzen Embedded R1606G with Radeon Vega Gfx
+15D8,	92,	AMD Ryzen Embedded R1505G with Radeon Vega Gfx
 15D8,	93,	AMD Radeon Vega 1 Graphics
+15D8,	A1,	AMD Radeon Vega 10 Graphics
+15D8,	A2,	AMD Radeon Vega 8 Graphics
+15D8,	A3,	AMD Radeon Vega 6 Graphics
+15D8,	B1,	AMD Radeon Vega 10 Graphics
+15D8,	B2,	AMD Radeon Vega 8 Graphics
+15D8,	B3,	AMD Radeon Vega 6 Graphics
+15D8,	C1,	AMD Radeon Vega 10 Graphics
+15D8,	C2,	AMD Radeon Vega 8 Graphics
+15D8,	C3,	AMD Radeon Vega 6 Graphics
 15D8,	C4,	AMD Radeon Vega 3 Graphics
 15D8,	C5,	AMD Radeon Vega 3 Graphics
+15D8,	C8,	AMD Radeon Vega 11 Graphics
+15D8,	C9,	AMD Radeon Vega 8 Graphics
+15D8,	CA,	AMD Radeon Vega 11 Graphics
+15D8,	CB,	AMD Radeon Vega 8 Graphics
 15D8,	CC,	AMD Radeon Vega 3 Graphics
 15D8,	CE,	AMD Radeon Vega 3 Graphics
 15D8,	CF,	AMD Radeon Vega 3 Graphics
+15D8,	CF,	AMD Ryzen Embedded R1305G with Radeon Vega Gfx
+15D8,	D1,	AMD Radeon Vega 10 Graphics
+15D8,	D2,	AMD Radeon Vega 8 Graphics
+15D8,	D3,	AMD Radeon Vega 6 Graphics
 15D8,	D4,	AMD Radeon Vega 3 Graphics
+15D8,	D8,	AMD Radeon Vega 11 Graphics
+15D8,	D9,	AMD Radeon Vega 8 Graphics
+15D8,	DA,	AMD Radeon Vega 11 Graphics
+15D8,	DB,	AMD Radeon Vega 8 Graphics
 15D8,	DC,	AMD Radeon Vega 3 Graphics
 15D8,	DD,	AMD Radeon Vega 3 Graphics
 15D8,	DE,	AMD Radeon Vega 3 Graphics
 15D8,	DF,	AMD Radeon Vega 3 Graphics
 15D8,	E3,	AMD Radeon Vega 3 Graphics
 15D8,	E4,	AMD Radeon Vega 3 Graphics
-15D8,	A3,	AMD Radeon Vega 6 Graphics
-15D8,	B3,	AMD Radeon Vega 6 Graphics
-15D8,	C3,	AMD Radeon Vega 6 Graphics
-15D8,	D3,	AMD Radeon Vega 6 Graphics
-15D8,	A2,	AMD Radeon Vega 8 Graphics
-15D8,	B2,	AMD Radeon Vega 8 Graphics
-15D8,	C2,	AMD Radeon Vega 8 Graphics
-15D8,	C9,	AMD Radeon Vega 8 Graphics
-15D8,	CB,	AMD Radeon Vega 8 Graphics
-15D8,	D2,	AMD Radeon Vega 8 Graphics
-15D8,	D9,	AMD Radeon Vega 8 Graphics
-15D8,	DB,	AMD Radeon Vega 8 Graphics
-15D8,	A1,	AMD Radeon Vega 10 Graphics
-15D8,	B1,	AMD Radeon Vega 10 Graphics
-15D8,	C1,	AMD Radeon Vega 10 Graphics
-15D8,	D1,	AMD Radeon Vega 10 Graphics
-15D8,	C8,	AMD Radeon Vega 11 Graphics
-15D8,	CA,	AMD Radeon Vega 11 Graphics
-15D8,	D8,	AMD Radeon Vega 11 Graphics
-15D8,	DA,	AMD Radeon Vega 11 Graphics
-15D8,	91,	AMD Ryzen Embedded R1606G with Radeon Vega Gfx
-15D8,	92,	AMD Ryzen Embedded R1505G with Radeon Vega Gfx
-15D8,	CF,	AMD Ryzen Embedded R1305G with Radeon Vega Gfx
 15D8,	E4,	AMD Ryzen Embedded R1102G with Radeon Vega Gfx
+15DD,	81,	AMD Ryzen Embedded V1807B with Radeon Vega Gfx
+15DD,	82,	AMD Ryzen Embedded V1756B with Radeon Vega Gfx
+15DD,	83,	AMD Ryzen Embedded V1605B with Radeon Vega Gfx
+15DD,	85,	AMD Ryzen Embedded V1202B with Radeon Vega Gfx
+15DD,	C1,	AMD Radeon Vega 11 Graphics
+15DD,	C2,	AMD Radeon Vega 8 Graphics
+15DD,	C3,	AMD Radeon Vega 10 Graphics
+15DD,	C3,	AMD Radeon Vega 3 Graphics
+15DD,	C4,	AMD Radeon Vega 8 Graphics
+15DD,	C6,	AMD Radeon Vega 11 Graphics
+15DD,	C8,	AMD Radeon Vega 8 Graphics
+15DD,	C9,	AMD Radeon Vega 11 Graphics
+15DD,	CA,	AMD Radeon Vega 8 Graphics
+15DD,	CB,	AMD Radeon Vega 3 Graphics
+15DD,	CC,	AMD Radeon Vega 6 Graphics
+15DD,	CE,	AMD Radeon Vega 3 Graphics
+15DD,	D0,	AMD Radeon Vega 10 Graphics
+15DD,	D1,	AMD Radeon Vega 8 Graphics
+15DD,	D3,	AMD Radeon Vega 11 Graphics
+15DD,	D5,	AMD Radeon Vega 8 Graphics
+15DD,	D6,	AMD Radeon Vega 11 Graphics
+15DD,	D7,	AMD Radeon Vega 8 Graphics
+15DD,	D8,	AMD Radeon Vega 3 Graphics
+15DD,	D9,	AMD Radeon Vega 6 Graphics
 163F,	AE,	AMD Custom GPU 0405
 6600,	00,	AMD Radeon HD 8600 / 8700M
 6600,	81,	AMD Radeon R7 M370
@@ -118,6 +118,15 @@
 67B1,	00,	AMD Radeon R9 200 Series
 67B1,	80,	AMD Radeon R9 390 Series
 67B9,	00,	AMD Radeon R9 200 Series
+67C0,	00,	AMD Radeon Pro WX 7100 Graphics
+67C2,	01,	AMD Radeon Pro V7350x2
+67C2,	02,	AMD Radeon Pro V7300X
+67C4,	00,	AMD Radeon Pro WX 7100 Graphics
+67C4,	80,	AMD Radeon E9560 / E9565 Graphics
+67C7,	00,	AMD Radeon Pro WX 5100 Graphics
+67C7,	80,	AMD Radeon E9390 Graphics
+67D0,	01,	AMD Radeon Pro V7350x2
+67D0,	02,	AMD Radeon Pro V7300X
 67DF,	C1,	AMD Radeon RX 580 Series
 67DF,	C2,	AMD Radeon RX 570 Series
 67DF,	C3,	AMD Radeon RX 580 Series
@@ -133,15 +142,6 @@
 67DF,	E7,	AMD Radeon RX 580 Series
 67DF,	EF,	AMD Radeon RX 570 Series
 67DF,	F7,	AMD Radeon RX P30PH
-67C2,	01,	AMD Radeon Pro V7350x2
-67C2,	02,	AMD Radeon Pro V7300X
-67C4,	00,	AMD Radeon Pro WX 7100 Graphics
-67C4,	80,	AMD Radeon E9560 / E9565 Graphics
-67C7,	00,	AMD Radeon Pro WX 5100 Graphics
-67C7,	80,	AMD Radeon E9390 Graphics
-67C0,	00,	AMD Radeon Pro WX 7100 Graphics
-67D0,	01,	AMD Radeon Pro V7350x2
-67D0,	02,	AMD Radeon Pro V7300X
 67E0,	00,	AMD Radeon Pro WX Series
 67E3,	00,	AMD Radeon Pro WX 4100
 67E8,	00,	AMD Radeon Pro WX Series
@@ -154,9 +154,9 @@
 67EF,	C5,	AMD Radeon RX 460 Graphics
 67EF,	C7,	AMD Radeon RX Graphics
 67EF,	CF,	AMD Radeon RX 460 Graphics
-67EF,	E2,	AMD Radeon RX 560X
 67EF,	E0,	AMD Radeon RX 560 Series
 67EF,	E1,	AMD Radeon RX Series
+67EF,	E2,	AMD Radeon RX 560X
 67EF,	E3,	AMD Radeon RX Series
 67EF,	E5,	AMD Radeon RX 560 Series
 67EF,	EF,	AMD Radeon RX Graphics
@@ -180,8 +180,8 @@
 6820,	81,	AMD Radeon R9 M375
 6820,	83,	AMD Radeon R9 M375X
 6821,	00,	AMD Radeon HD 8800M Series
-6821,	87,	AMD Radeon R7 M380
 6821,	83,	AMD Radeon R9 M370X
+6821,	87,	AMD Radeon R7 M380
 6822,	00,	AMD Radeon E8860
 6823,	00,	AMD Radeon HD 8800M Series
 6825,	00,	AMD Radeon HD 7800M Series
@@ -232,8 +232,8 @@
 6938,	00,	AMD Radeon R9 200 Series
 6938,	F0,	AMD Radeon R9 200 Series
 6938,	F1,	AMD Radeon R9 380 Series
-6939,	F0,	AMD Radeon R9 200 Series
 6939,	00,	AMD Radeon R9 200 Series
+6939,	F0,	AMD Radeon R9 200 Series
 6939,	F1,	AMD Radeon R9 380 Series
 6980,	00,	AMD Radeon Pro WX 3100
 6981,	00,	AMD Radeon Pro WX 3200 Series
@@ -251,11 +251,13 @@
 699F,	C1,	AMD Radeon 540 Series
 699F,	C3,	AMD Radeon 500 Series
 699F,	C7,	AMD Radeon RX 550 / 550 Series
+6FDF,	E7,	AMD Radeon RX 590 GME
+6FDF,	EF,	AMD Radeon RX 580 2048SP
 7300,	C1,	AMD FirePro S9300 x2
 7300,	C8,	AMD Radeon R9 Fury Series
 7300,	C9,	AMD Radeon Pro Duo
-7300,	CB,	AMD Radeon R9 Fury Series
 7300,	CA,	AMD Radeon R9 Fury Series
+7300,	CB,	AMD Radeon R9 Fury Series
 7312,	00,	AMD Radeon Pro W5700
 731E,	C6,	AMD Radeon RX 5700XTB
 731E,	C7,	AMD Radeon RX 5700B
@@ -306,14 +308,12 @@
 743F,	C3,	AMD Radeon RX 6500
 743F,	C7,	AMD Radeon RX 6400
 743F,	CF,	AMD Radeon RX 6300M
+9874,	81,	AMD Radeon R6 Graphics
+9874,	84,	AMD Radeon R7 Graphics
+9874,	85,	AMD Radeon R6 Graphics
+9874,	87,	AMD Radeon R5 Graphics
 9874,	C4,	AMD Radeon R7 Graphics
 9874,	C5,	AMD Radeon R6 Graphics
 9874,	C6,	AMD Radeon R6 Graphics
 9874,	C7,	AMD Radeon R5 Graphics
 9874,	C8,	AMD Radeon R7 Graphics
-9874,	81,	AMD Radeon R6 Graphics
-9874,	87,	AMD Radeon R5 Graphics
-9874,	85,	AMD Radeon R6 Graphics
-9874,	84,	AMD Radeon R7 Graphics
-6FDF,	E7,	AMD Radeon RX 590 GME
-6FDF,	EF,	AMD Radeon RX 580 2048SP
