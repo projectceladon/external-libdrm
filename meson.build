@@ -87,13 +87,15 @@ endif
 config.set10('HAVE_LIBDRM_ATOMIC_PRIMITIVES', intel_atomics)
 config.set10('HAVE_LIB_ATOMIC_OPS', lib_atomics)
 
+dep_pciaccess = dependency('pciaccess', version : '>= 0.10', required : get_option('intel'))
+
 with_intel = false
 _intel = get_option('intel')
 if not _intel.disabled()
   if _intel.enabled() and not with_atomics
     error('libdrm_intel requires atomics.')
   else
-    with_intel = (_intel.enabled() or host_machine.cpu_family().startswith('x86')) and with_atomics
+    with_intel = (_intel.enabled() or host_machine.cpu_family().startswith('x86')) and with_atomics and dep_pciaccess.found()
   endif
 endif
 summary('Intel', with_intel)
@@ -244,7 +246,6 @@ libdrm_c_args = cc.get_supported_arguments([
   '-Wno-unused-parameter', '-Wno-attributes', '-Wno-long-long',
   '-Wno-missing-field-initializers'])
 
-dep_pciaccess = dependency('pciaccess', version : '>= 0.10', required : with_intel)
 dep_cunit = dependency('cunit', version : '>= 2.1', required : false)
 dep_cairo = dependency('cairo', required : get_option('cairo-tests'))
 with_cairo_tests = dep_cairo.found()
