@@ -1,7 +1,7 @@
 /**************************************************************************
  *
- * Copyright © 2007 Red Hat Inc.
- * Copyright © 2007-2012 Intel Corporation
+ * Copyright Â© 2007 Red Hat Inc.
+ * Copyright Â© 2007-2012 Intel Corporation
  * Copyright 2006 Tungsten Graphics, Inc., Bismarck, ND., USA
  * All Rights Reserved.
  *
@@ -28,7 +28,7 @@
  *
  **************************************************************************/
 /*
- * Authors: Thomas Hellström <thomas-at-tungstengraphics-dot-com>
+ * Authors: Thomas HellstrÃ¶m <thomas-at-tungstengraphics-dot-com>
  *          Keith Whitwell <keithw-at-tungstengraphics-dot-com>
  *	    Eric Anholt <eric@anholt.net>
  *	    Dave Airlie <airlied@linux.ie>
@@ -1379,15 +1379,15 @@ static void drm_intel_gem_bo_unreference_locked_timed(drm_intel_bo *bo,
 static void drm_intel_gem_bo_unreference(drm_intel_bo *bo)
 {
 	drm_intel_bo_gem *bo_gem = (drm_intel_bo_gem *) bo;
+	drm_intel_bufmgr_gem *bufmgr_gem;
+	struct timespec time;
 
 	assert(atomic_read(&bo_gem->refcount) > 0);
 
 	if (atomic_add_unless(&bo_gem->refcount, -1, 1))
 		return;
 
-	drm_intel_bufmgr_gem *bufmgr_gem =
-		(drm_intel_bufmgr_gem *) bo->bufmgr;
-	struct timespec time;
+	bufmgr_gem = (drm_intel_bufmgr_gem *) bo->bufmgr;
 
 	clock_gettime(CLOCK_MONOTONIC, &time);
 
