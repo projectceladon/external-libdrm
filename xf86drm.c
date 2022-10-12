@@ -5117,27 +5117,32 @@ drmGetFormatModifierName(uint64_t modifier)
 drm_public char *
 drmGetFormatName(uint32_t format)
 {
-    char *str;
+    char *str, code[5];
+    const char *be;
     size_t str_size, i;
-    char a, b, c, d;
+
+    be = (format & DRM_FORMAT_BIG_ENDIAN) ? "_BE" : "";
+    format &= ~DRM_FORMAT_BIG_ENDIAN;
 
     if (format == DRM_FORMAT_INVALID)
         return strdup("INVALID");
 
-    str_size = 5;
+    code[0] = (char) ((format >> 0) & 0xFF);
+    code[1] = (char) ((format >> 8) & 0xFF);
+    code[2] = (char) ((format >> 16) & 0xFF);
+    code[3] = (char) ((format >> 24) & 0xFF);
+    code[4] = '\0';
+
+    /* Trim spaces at the end */
+    for (i = 3; i > 0 && code[i] == ' '; i--)
+        code[i] = '\0';
+
+    str_size = strlen(code) + strlen(be) + 1;
     str = malloc(str_size);
     if (!str)
         return NULL;
 
-    a = (char) ((format >> 0) & 0xFF);
-    b = (char) ((format >> 8) & 0xFF);
-    c = (char) ((format >> 16) & 0xFF);
-    d = (char) ((format >> 24) & 0xFF);
-    snprintf(str, str_size, "%c%c%c%c", a, b, c, d);
-
-    /* Trim spaces at the end */
-    for (i = 3; i > 0 && str[i] == ' '; i--)
-        str[i] = '\0';
+    snprintf(str, str_size, "%s%s", code, be);
 
     return str;
 }
