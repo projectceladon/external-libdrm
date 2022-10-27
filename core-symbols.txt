@@ -105,10 +105,12 @@ drmModeAtomicSetCursor
 drmModeAttachMode
 drmModeConnectorGetPossibleCrtcs
 drmModeConnectorSetProperty
+drmModeCreateDumbBuffer
 drmModeCreateLease
 drmModeCreatePropertyBlob
 drmModeCrtcGetGamma
 drmModeCrtcSetGamma
+drmModeDestroyDumbBuffer
 drmModeDestroyPropertyBlob
 drmModeDetachMode
 drmModeDirtyFB
@@ -139,6 +141,7 @@ drmModeGetProperty
 drmModeGetPropertyBlob
 drmModeGetResources
 drmModeListLessees
+drmModeMapDumbBuffer
 drmModeMoveCursor
 drmModeObjectGetProperties
 drmModeObjectSetProperty
