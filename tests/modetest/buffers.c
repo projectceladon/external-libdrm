@@ -45,7 +45,6 @@ struct bo
 	int fd;
 	void *ptr;
 	size_t size;
-	size_t offset;
 	size_t pitch;
 	unsigned handle;
 };
