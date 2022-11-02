@@ -44,9 +44,9 @@ struct bo
 {
 	int fd;
 	void *ptr;
-	size_t size;
-	size_t pitch;
-	unsigned handle;
+	uint64_t size;
+	uint32_t pitch;
+	uint32_t handle;
 };
 
 /* -----------------------------------------------------------------------------
