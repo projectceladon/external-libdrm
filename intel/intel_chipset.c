@@ -35,6 +35,7 @@ static const struct pci_device {
 	uint16_t gen;
 } pciids[] = {
 	/* Keep ids sorted by gen; latest gen first */
+	INTEL_RPLP_IDS(12),
 	INTEL_ADLP_IDS(12),
 	INTEL_ADLS_IDS(12),
 	INTEL_RKL_IDS(12),
@@ -49,6 +50,7 @@ static const struct pci_device {
 	INTEL_KBL_IDS(9),
 	INTEL_BXT_IDS(9),
 	INTEL_SKL_IDS(9),
+
 };
 
 drm_private bool intel_is_genx(unsigned int devid, int gen)
