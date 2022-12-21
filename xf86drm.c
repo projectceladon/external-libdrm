@@ -555,7 +555,7 @@ static char *
 drmGetFormatModifierNameFromVivante(uint64_t modifier)
 {
     const char *color_tiling, *tile_status, *compression;
-    const char *mod_vivante = NULL;
+    char *mod_vivante = NULL;
 
     switch (modifier & VIVANTE_MOD_TS_MASK) {
     case 0:
