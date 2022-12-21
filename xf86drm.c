@@ -478,6 +478,9 @@ drmGetFormatModifierNameFromAmd(uint64_t modifier)
     case AMD_FMT_MOD_TILE_VER_GFX10_RBPLUS:
         str_tile_version = "GFX10_RBPLUS";
         break;
+    case AMD_FMT_MOD_TILE_VER_GFX11:
+        str_tile_version = "GFX11";
+        break;
     }
 
     if (str_tile_version) {
@@ -504,6 +507,9 @@ drmGetFormatModifierNameFromAmd(uint64_t modifier)
         break;
     case AMD_FMT_MOD_TILE_GFX9_64K_R_X:
         str_tile = "GFX9_64K_R_X";
+        break;
+    case AMD_FMT_MOD_TILE_GFX11_256K_R_X:
+        str_tile = "GFX11_256K_R_X";
         break;
     }
 
