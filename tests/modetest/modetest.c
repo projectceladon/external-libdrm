@@ -2137,13 +2137,16 @@ static void usage(char *name)
 	fprintf(stderr, "\t-p\tlist CRTCs and planes (pipes)\n");
 
 	fprintf(stderr, "\n Test options:\n\n");
-	fprintf(stderr, "\t-P <plane_id>@<crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]\tset a plane\n");
-	fprintf(stderr, "\t-s <connector_id>[,<connector_id>][@<crtc_id>]:[#<mode index>]<mode>[-<vrefresh>][@<format>]\tset a mode\n");
-	fprintf(stderr, "\t\tcustom mode can be specified as <hdisplay>,<hsyncstart>,<hsyncend>,<htotal>,<vdisplay>,<vsyncstart>,<vsyncend>,<vtotal>\n");
+	fprintf(stderr, "\t-P <plane_id>@<crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]\tset a plane, see 'plane-topology'\n");
+	fprintf(stderr, "\t-s <connector_id>[,<connector_id>][@<crtc_id>]:mode[@<format>]\tset a mode, see 'mode-topology'\n");
+	fprintf(stderr, "\t\twhere mode can be specified as:\n");
+	fprintf(stderr, "\t\t<hdisp>x<vdisp>[-<vrefresh>]\n");
+	fprintf(stderr, "\t\t<hdisp>,<hss>,<hse>,<htot>,<vdisp>,<vss>,<vse>,<vtot>-<vrefresh>\n");
+	fprintf(stderr, "\t\t#<mode index>\n");
 	fprintf(stderr, "\t-C\ttest hw cursor\n");
 	fprintf(stderr, "\t-v\ttest vsynced page flipping\n");
 	fprintf(stderr, "\t-r\tset the preferred mode for all connectors\n");
-	fprintf(stderr, "\t-w <obj_id>:<prop_name>:<value>\tset property\n");
+	fprintf(stderr, "\t-w <obj_id>:<prop_name>:<value>\tset property, see 'property'\n");
 	fprintf(stderr, "\t-a \tuse atomic API\n");
 	fprintf(stderr, "\t-F pattern1,pattern2\tspecify fill patterns\n");
 	fprintf(stderr, "\t-o <desired file path> \t Dump writeback output buffer to file\n");
@@ -2154,6 +2157,25 @@ static void usage(char *name)
 	fprintf(stderr, "\t-D device\tuse the given device\n");
 
 	fprintf(stderr, "\n\tDefault is to dump all info.\n");
+
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Plane Topology is defined as:\n");
+	fprintf(stderr, "\tplane-topology\t::= plane-id '@' crtc-id ':' width 'x' height ( <plane-offsets> )? ;\n");
+	fprintf(stderr, "\tplane-offsets\t::= '+' x-offset '+' y-offset ( <plane-scale> )? ;\n");
+	fprintf(stderr, "\tplane-scale\t::= '*' scale ( <plane-format> )? ;\n");
+	fprintf(stderr, "\tplane-format\t::= '@' format ;\n");
+
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Mode Topology is defined as:\n");
+	fprintf(stderr, "\tmode-topology\t::= connector-id ( ',' connector-id )* ( '@' crtc-id )? ':' <mode-selection> ( '@' format )? ;\n");
+	fprintf(stderr, "\tmode-selection\t::=  <indexed-mode> | <named-mode> | <custom-mode> ;\n");
+	fprintf(stderr, "\tindexed-mode\t::=  '#' mode-index ;\n");
+	fprintf(stderr, "\tnamed-mode\t::=  width 'x' height ( '-' vrefresh )? ;\n");
+	fprintf(stderr, "\tcustom-mode\t::=  hdisplay ',' hsyncstart ',' hsyncend ',' htotal ',' vdisplay ',' vsyncstart ',' vsyncend ',' vtotal '-' vrefresh ;\n");
+
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Property is defined as:\n");
+	fprintf(stderr, "\tproperty\t::= object-id ':' property-name ':' value ;\n");
 	exit(0);
 }
 
