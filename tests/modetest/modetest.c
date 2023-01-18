@@ -2290,11 +2290,6 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	if (set_preferred && plane_count) {
-		fprintf(stderr, "cannot use -r (preferred) when -P (plane) is set\n");
-		return -1;
-	}
-
 	dev.fd = util_open(device, module);
 	if (dev.fd < 0)
 		return -1;
