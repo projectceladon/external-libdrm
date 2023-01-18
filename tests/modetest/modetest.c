@@ -1608,32 +1608,35 @@ static struct plane *get_primary_plane_by_crtc(struct device *dev, struct crtc *
 	return NULL;
 }
 
-static void set_mode(struct device *dev, struct pipe_arg *pipes, unsigned int count)
+static unsigned int set_mode(struct device *dev, struct pipe_arg **pipe_args, unsigned int count)
 {
 	unsigned int i, j;
 	int ret, x = 0;
 	int preferred = count == 0;
+	struct pipe_arg *pipes;
 
-	for (i = 0; i < count; i++) {
-		struct pipe_arg *pipe = &pipes[i];
-
-		ret = pipe_resolve_connectors(dev, pipe);
-		if (ret < 0)
-			return;
-
-		ret = pipe_find_crtc_and_mode(dev, pipe);
-		if (ret < 0)
-			continue;
-	}
 	if (preferred) {
-		struct pipe_arg *pipe_args;
-
-		count = pipe_find_preferred(dev, &pipe_args);
+		count = pipe_find_preferred(dev, pipe_args);
 		if (!count) {
 			fprintf(stderr, "can't find any preferred connector/mode.\n");
-			return;
+			return 0;
 		}
-		pipes = pipe_args;
+
+		pipes = *pipe_args;
+	} else {
+		pipes = *pipe_args;
+
+		for (i = 0; i < count; i++) {
+			struct pipe_arg *pipe = &pipes[i];
+
+			ret = pipe_resolve_connectors(dev, pipe);
+			if (ret < 0)
+				return 0;
+
+			ret = pipe_find_crtc_and_mode(dev, pipe);
+			if (ret < 0)
+				continue;
+		}
 	}
 
 	if (!dev->use_atomic) {
@@ -1660,7 +1663,7 @@ static void set_mode(struct device *dev, struct pipe_arg *pipes, unsigned int co
 
 		if (bo_fb_create(dev->fd, pipes[0].fourcc, dev->mode.width, dev->mode.height,
 			             primary_fill, &dev->mode.bo, &dev->mode.fb_id))
-			return;
+			return 0;
 	}
 
 	for (i = 0; i < count; i++) {
@@ -1692,7 +1695,7 @@ static void set_mode(struct device *dev, struct pipe_arg *pipes, unsigned int co
 
 			if (ret) {
 				fprintf(stderr, "failed to set mode: %s\n", strerror(errno));
-				return;
+				return 0;
 			}
 
 			set_gamma(dev, pipe->crtc_id, pipe->fourcc);
@@ -1718,6 +1721,8 @@ static void set_mode(struct device *dev, struct pipe_arg *pipes, unsigned int co
 			}
 		}
 	}
+
+	return count;
 }
 
 static void writeback_config(struct device *dev, struct pipe_arg *pipes, unsigned int count)
@@ -2276,8 +2281,8 @@ int main(int argc, char **argv)
 	if (!args)
 		encoders = connectors = crtcs = planes = framebuffers = 1;
 
-	if (test_vsync && !count) {
-		fprintf(stderr, "page flipping requires at least one -s option.\n");
+	if (test_vsync && !count && !set_preferred) {
+		fprintf(stderr, "page flipping requires at least one -s or -r option.\n");
 		return -1;
 	}
 	if (set_preferred && count) {
@@ -2336,7 +2341,7 @@ int main(int argc, char **argv)
 			}
 
 			if (set_preferred || count)
-				set_mode(&dev, pipe_args, count);
+				count = set_mode(&dev, &pipe_args, count);
 
 			if (dump_path) {
 				if (!pipe_has_writeback_connector(&dev, pipe_args, count)) {
@@ -2411,7 +2416,7 @@ int main(int argc, char **argv)
 			}
 
 			if (set_preferred || count)
-				set_mode(&dev, pipe_args, count);
+				count = set_mode(&dev, &pipe_args, count);
 
 			if (plane_count)
 				set_planes(&dev, plane_args, plane_count);
