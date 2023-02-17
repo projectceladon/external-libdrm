@@ -534,6 +534,20 @@ int amdgpu_device_initialize(int fd,
 			     amdgpu_device_handle *device_handle);
 
 /**
+ * Same as amdgpu_device_initialize() except when deduplicate_device
+ * is false *and* fd points to a device that was already initialized.
+ * In this case, amdgpu_device_initialize would return the same
+ * amdgpu_device_handle while here amdgpu_device_initialize2 would
+ * return a new handle.
+ * amdgpu_device_initialize() should be preferred in most situations;
+ * the only use-case where not-deduplicating devices make sense is
+ * when one wants to have isolated device handles in the same process.
+ */
+int amdgpu_device_initialize2(int fd, bool deduplicate_device,
+			      uint32_t *major_version,
+			      uint32_t *minor_version,
+			      amdgpu_device_handle *device_handle);
+/**
  *
  * When access to such library does not needed any more the special
  * function must be call giving opportunity to clean up any

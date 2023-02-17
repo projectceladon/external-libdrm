@@ -56,6 +56,7 @@ amdgpu_cs_wait_semaphore
 amdgpu_device_deinitialize
 amdgpu_device_get_fd
 amdgpu_device_initialize
+amdgpu_device_initialize2
 amdgpu_find_bo_by_cpu_mapping
 amdgpu_get_marketing_name
 amdgpu_query_buffer_size_alignment

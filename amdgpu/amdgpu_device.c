@@ -97,9 +97,9 @@ static void amdgpu_device_free_internal(amdgpu_device_handle dev)
 {
 	amdgpu_device_handle *node = &dev_list;
 
-	while (*node != dev && (*node)->next)
+	/* Remove dev from dev_list, if it was added there. */
+	while (*node != dev && *node && (*node)->next)
 		node = &(*node)->next;
-	*node = (*node)->next;
 
 	close(dev->fd);
 	if ((dev->flink_fd >= 0) && (dev->fd != dev->flink_fd))
@@ -138,12 +138,13 @@ static void amdgpu_device_reference(struct amdgpu_device **dst,
 	*dst = src;
 }
 
-drm_public int amdgpu_device_initialize(int fd,
-					uint32_t *major_version,
-					uint32_t *minor_version,
-					amdgpu_device_handle *device_handle)
+static int _amdgpu_device_initialize(int fd,
+				     uint32_t *major_version,
+				     uint32_t *minor_version,
+				     amdgpu_device_handle *device_handle,
+				     bool deduplicate_device)
 {
-	struct amdgpu_device *dev;
+	struct amdgpu_device *dev = NULL;
 	drmVersionPtr version;
 	int r;
 	int flag_auth = 0;
@@ -153,6 +154,7 @@ drm_public int amdgpu_device_initialize(int fd,
 	*device_handle = NULL;
 
 	pthread_mutex_lock(&dev_mutex);
+
 	r = amdgpu_get_auth(fd, &flag_auth);
 	if (r) {
 		fprintf(stderr, "%s: amdgpu_get_auth (1) failed (%i)\n",
@@ -161,9 +163,10 @@ drm_public int amdgpu_device_initialize(int fd,
 		return r;
 	}
 
-	for (dev = dev_list; dev; dev = dev->next)
-		if (fd_compare(dev->fd, fd) == 0)
-			break;
+	if (deduplicate_device)
+		for (dev = dev_list; dev; dev = dev->next)
+			if (fd_compare(dev->fd, fd) == 0)
+				break;
 
 	if (dev) {
 		r = amdgpu_get_auth(dev->fd, &flag_authexist);
@@ -247,8 +250,10 @@ drm_public int amdgpu_device_initialize(int fd,
 	*major_version = dev->major_version;
 	*minor_version = dev->minor_version;
 	*device_handle = dev;
-	dev->next = dev_list;
-	dev_list = dev;
+	if (deduplicate_device) {
+		dev->next = dev_list;
+		dev_list = dev;
+	}
 	pthread_mutex_unlock(&dev_mutex);
 
 	return 0;
@@ -259,6 +264,22 @@ cleanup:
 	free(dev);
 	pthread_mutex_unlock(&dev_mutex);
 	return r;
+}
+
+drm_public int amdgpu_device_initialize(int fd,
+					uint32_t *major_version,
+					uint32_t *minor_version,
+					amdgpu_device_handle *device_handle)
+{
+	return _amdgpu_device_initialize(fd, major_version, minor_version, device_handle, true);
+}
+
+drm_public int amdgpu_device_initialize2(int fd, bool deduplicate_device,
+					 uint32_t *major_version,
+					 uint32_t *minor_version,
+					 amdgpu_device_handle *device_handle)
+{
+	return _amdgpu_device_initialize(fd, major_version, minor_version, device_handle, deduplicate_device);
 }
 
 drm_public int amdgpu_device_deinitialize(amdgpu_device_handle dev)
