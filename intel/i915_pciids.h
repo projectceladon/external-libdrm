@@ -673,7 +673,10 @@
        INTEL_VGA_DEVICE(0xA7A8, info), \
        INTEL_VGA_DEVICE(0xA7A1, info), \
        INTEL_VGA_DEVICE(0xA721, info), \
-       INTEL_VGA_DEVICE(0xA7A9, info), \
+       INTEL_VGA_DEVICE(0xA7A9, info)
+
+/* RPL-S */
+#define INTEL_RPLS_IDS(info) \
        INTEL_VGA_DEVICE(0xA780, info), \
        INTEL_VGA_DEVICE(0xA781, info), \
        INTEL_VGA_DEVICE(0xA782, info), \
