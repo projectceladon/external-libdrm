@@ -63,6 +63,7 @@ amdgpu_query_crtc_from_id
 amdgpu_query_firmware_version
 amdgpu_query_gds_info
 amdgpu_query_gpu_info
+amdgpu_query_gpuvm_fault_info
 amdgpu_query_heap_info
 amdgpu_query_hw_ip_count
 amdgpu_query_hw_ip_info
