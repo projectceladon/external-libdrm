@@ -296,8 +296,8 @@ static void display_test_suites(void)
 
 /** Help string for command line parameters */
 static const char usage[] =
-	"Usage: %s [-hlpr] [<-s <suite id>> [-t <test id>] [-f]] "
-	"[-b <pci_bus_id> [-d <pci_device_id>]]\n"
+	"Usage: %s [-hlpr] [-s <suite id>] [-t <test id>] [-f] "
+	"[-b <pci_bus_id>] [-d <pci_device_id>]\n"
 	"where:\n"
 	"       l - Display all suites and their tests\n"
 	"       r - Run the tests on render node\n"
