@@ -298,14 +298,16 @@ static void display_test_suites(void)
 static const char usage[] =
 	"Usage: %s [-hlpr] [-s <suite id>] [-t <test id>] [-f] "
 	"[-b <pci_bus_id>] [-d <pci_device_id>]\n"
-	"where:\n"
-	"       l - Display all suites and their tests\n"
-	"       r - Run the tests on render node\n"
-	"       b - Specify device's PCI bus id to run tests\n"
-	"       d - Specify device's PCI device id to run tests (optional)\n"
-	"       p - Display information of AMDGPU devices in system\n"
-	"       f - Force executing inactive suite or test\n"
-	"       h - Display this help\n";
+	"Where,\n"
+	"  -b      Specify device's PCI bus id to run tests\n"
+	"  -d      Specify device's PCI device id to run tests (optional)\n"
+	"  -f      Force executing inactive suite or test\n"
+	"  -h      Display this help\n"
+	"  -l      Display all test suites and their tests\n"
+	"  -p      Display information of AMDGPU devices in system\n"
+	"  -r      Run the tests on render node\n"
+	"  -s <s>  Enable only test suite <s>\n"
+	"  -t <t>  Enable only test <t> of test suite <s>\n";
 /** Specified options strings for getopt */
 static const char options[]   = "hlrps:t:b:d:f";
 
