@@ -1004,8 +1004,8 @@ drm_public int drmModeCrtcGetGamma(int fd, uint32_t crtc_id, uint32_t size,
 }
 
 drm_public int drmModeCrtcSetGamma(int fd, uint32_t crtc_id, uint32_t size,
-								   uint16_t *red, uint16_t *green,
-								   uint16_t *blue)
+								   const uint16_t *red, const uint16_t *green,
+								   const uint16_t *blue)
 {
 	struct drm_mode_crtc_lut l;
 

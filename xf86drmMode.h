@@ -416,7 +416,7 @@ extern int drmModeConnectorSetProperty(int fd, uint32_t connector_id, uint32_t p
 extern int drmCheckModesettingSupported(const char *busid);
 
 extern int drmModeCrtcSetGamma(int fd, uint32_t crtc_id, uint32_t size,
-			       uint16_t *red, uint16_t *green, uint16_t *blue);
+			       const uint16_t *red, const uint16_t *green, const uint16_t *blue);
 extern int drmModeCrtcGetGamma(int fd, uint32_t crtc_id, uint32_t size,
 			       uint16_t *red, uint16_t *green, uint16_t *blue);
 extern int drmModePageFlip(int fd, uint32_t crtc_id, uint32_t fb_id,
