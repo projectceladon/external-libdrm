@@ -1267,7 +1267,7 @@ static void check_result(struct amdgpu_vcn_bo fb_buf, struct amdgpu_vcn_bo bs_bu
 
 static void amdgpu_cs_vcn_enc_encode_frame(int frame_type)
 {
-	struct amdgpu_vcn_bo bs_buf, fb_buf, vbv_buf;
+	struct amdgpu_vcn_bo bs_buf, fb_buf, input_buf;
 	int len, r, i;
 	unsigned width = 160, height = 128, buf_size;
 	uint32_t *p_task_size = NULL;
@@ -1288,12 +1288,12 @@ static void amdgpu_cs_vcn_enc_encode_frame(int frame_type)
 	num_resources = 0;
 	alloc_resource(&bs_buf, 4096, AMDGPU_GEM_DOMAIN_GTT);
 	alloc_resource(&fb_buf, 4096, AMDGPU_GEM_DOMAIN_GTT);
-	alloc_resource(&vbv_buf, buf_size, AMDGPU_GEM_DOMAIN_GTT);
+	alloc_resource(&input_buf, buf_size, AMDGPU_GEM_DOMAIN_GTT);
 	resources[num_resources++] = enc_buf.handle;
 	resources[num_resources++] = cpb_buf.handle;
 	resources[num_resources++] = bs_buf.handle;
 	resources[num_resources++] = fb_buf.handle;
-	resources[num_resources++] = vbv_buf.handle;
+	resources[num_resources++] = input_buf.handle;
 	resources[num_resources++] = ib_handle;
 
 
@@ -1305,13 +1305,13 @@ static void amdgpu_cs_vcn_enc_encode_frame(int frame_type)
 	memset(fb_buf.ptr, 0, 4096);
 	r = amdgpu_bo_cpu_unmap(fb_buf.handle);
 
-	r = amdgpu_bo_cpu_map(vbv_buf.handle, (void **)&vbv_buf.ptr);
+	r = amdgpu_bo_cpu_map(input_buf.handle, (void **)&input_buf.ptr);
 	CU_ASSERT_EQUAL(r, 0);
 
 	for (int i = 0; i < ALIGN(height, 32) * 3 / 2; i++)
-		memcpy(vbv_buf.ptr + i * ALIGN(width, 256), frame + i * width, width);
+		memcpy(input_buf.ptr + i * ALIGN(width, 256), frame + i * width, width);
 
-	r = amdgpu_bo_cpu_unmap(vbv_buf.handle);
+	r = amdgpu_bo_cpu_unmap(input_buf.handle);
 	CU_ASSERT_EQUAL(r, 0);
 
 	len = 0;
@@ -1412,10 +1412,10 @@ static void amdgpu_cs_vcn_enc_encode_frame(int frame_type)
 		ib_cpu[len++] = 0x0000000f;	/* RENCODE_IB_PARAM_ENCODE_PARAMS vcn 2,3*/
 	ib_cpu[len++] = frame_type;
 	ib_cpu[len++] = 0x0001f000;
-	ib_cpu[len++] = vbv_buf.addr >> 32;
-	ib_cpu[len++] = vbv_buf.addr;
-	ib_cpu[len++] = (vbv_buf.addr + ALIGN(width, 256) * ALIGN(height, 32)) >> 32;
-	ib_cpu[len++] = vbv_buf.addr + ALIGN(width, 256) * ALIGN(height, 32);
+	ib_cpu[len++] = input_buf.addr >> 32;
+	ib_cpu[len++] = input_buf.addr;
+	ib_cpu[len++] = (input_buf.addr + ALIGN(width, 256) * ALIGN(height, 32)) >> 32;
+	ib_cpu[len++] = input_buf.addr + ALIGN(width, 256) * ALIGN(height, 32);
 	ib_cpu[len++] = 0x00000100;
 	ib_cpu[len++] = 0x00000080;
 	ib_cpu[len++] = 0x00000000;
@@ -1564,7 +1564,7 @@ static void amdgpu_cs_vcn_enc_encode_frame(int frame_type)
 
 	free_resource(&fb_buf);
 	free_resource(&bs_buf);
-	free_resource(&vbv_buf);
+	free_resource(&input_buf);
 }
 
 static void amdgpu_cs_vcn_enc_encode(void)
