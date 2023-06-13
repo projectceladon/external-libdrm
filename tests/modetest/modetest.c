@@ -1073,7 +1073,7 @@ static bool set_property(struct device *dev, struct property_arg *p)
 
 	if (ret < 0)
 		fprintf(stderr, "failed to set %s %i property %s to %" PRIu64 ": %s\n",
-			obj_type, p->obj_id, p->name, p->value, strerror(errno));
+			obj_type, p->obj_id, p->name, p->value, strerror(-ret));
 
 	return true;
 }
@@ -2320,12 +2320,13 @@ int main(int argc, char **argv)
 	dump_resource(&dev, planes);
 	dump_resource(&dev, framebuffers);
 
+	if (dev.use_atomic)
+		dev.req = drmModeAtomicAlloc();
+
 	for (i = 0; i < prop_count; ++i)
 		set_property(&dev, &prop_args[i]);
 
 	if (dev.use_atomic) {
-		dev.req = drmModeAtomicAlloc();
-
 		if (set_preferred || (count && plane_count)) {
 			uint64_t cap = 0;
 
@@ -2385,14 +2386,14 @@ int main(int argc, char **argv)
 
 			if (count)
 				atomic_clear_mode(&dev, pipe_args, count);
-
-			ret = drmModeAtomicCommit(dev.fd, dev.req, DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
-			if (ret)
-				fprintf(stderr, "Atomic Commit failed\n");
-
-			if (plane_count)
-				atomic_clear_FB(&dev, plane_args, plane_count);
 		}
+
+		ret = drmModeAtomicCommit(dev.fd, dev.req, DRM_MODE_ATOMIC_ALLOW_MODESET, NULL);
+		if (ret)
+			fprintf(stderr, "Atomic Commit failed\n");
+
+		if (count && plane_count)
+			atomic_clear_FB(&dev, plane_args, plane_count);
 
 		drmModeAtomicFree(dev.req);
 	} else {
