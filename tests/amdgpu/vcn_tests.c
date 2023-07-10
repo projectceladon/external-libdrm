@@ -574,6 +574,8 @@ static void amdgpu_cs_vcn_dec_create(void)
 	memcpy(msg_buf.ptr, vcn_dec_create_msg, sizeof(vcn_dec_create_msg));
 
 	len = 0;
+
+	vcn_dec_cmd(session_ctx_buf.addr, 5, &len);
 	if (vcn_dec_sw_ring == true) {
 		vcn_dec_cmd(msg_buf.addr, 0, &len);
 	} else {
@@ -589,7 +591,6 @@ static void amdgpu_cs_vcn_dec_create(void)
 		}
 	}
 
-	vcn_dec_cmd(session_ctx_buf.addr, 5, &len);
 	if (vcn_unified_ring) {
 		amdgpu_cs_sq_ib_tail(ib_cpu + len);
 		ip = AMDGPU_HW_IP_VCN_ENC;
@@ -605,9 +606,8 @@ static void amdgpu_cs_vcn_dec_create(void)
 
 static void amdgpu_cs_vcn_dec_decode(void)
 {
-	const unsigned dpb_size = 15923584, dt_size = 737280, session_ctxbuf_size = 131072;
+	const unsigned dpb_size = 15923584, dt_size = 737280;
 	uint64_t msg_addr, fb_addr, bs_addr, dpb_addr, ctx_addr, dt_addr, it_addr, sum;
-	uint64_t session_ctxbuf_addr = 0;
 	struct amdgpu_vcn_bo dec_buf;
 	int size, len, i, r;
 	unsigned ip;
@@ -619,8 +619,6 @@ static void amdgpu_cs_vcn_dec_decode(void)
 	size += ALIGN(sizeof(uvd_bitstream), 4*1024);
 	size += ALIGN(dpb_size, 4*1024);
 	size += ALIGN(dt_size, 4*1024);
-	if (vcn_ip_version_major < 4)
-		size += ALIGN(session_ctxbuf_size, 4*1024);
 
 	num_resources = 0;
 	alloc_resource(&dec_buf, size, AMDGPU_GEM_DOMAIN_GTT);
@@ -655,13 +653,9 @@ static void amdgpu_cs_vcn_dec_decode(void)
 	dpb_addr = ALIGN(bs_addr + sizeof(uvd_bitstream), 4*1024);
 	ctx_addr = ALIGN(dpb_addr + 0x006B9400, 4*1024);
 	dt_addr = ALIGN(dpb_addr + dpb_size, 4*1024);
-	if (vcn_ip_version_major < 4)
-		session_ctxbuf_addr = ALIGN(dt_addr + dt_size, 4*1024);
 
 	len = 0;
-	if (vcn_ip_version_major >= 4)
-		vcn_dec_cmd(session_ctx_buf.addr, 0x5, &len);
-
+	vcn_dec_cmd(session_ctx_buf.addr, 0x5, &len);
 	vcn_dec_cmd(msg_addr, 0x0, &len);
 	vcn_dec_cmd(dpb_addr, 0x1, &len);
 	vcn_dec_cmd(dt_addr, 0x2, &len);
@@ -669,8 +663,6 @@ static void amdgpu_cs_vcn_dec_decode(void)
 	vcn_dec_cmd(bs_addr, 0x100, &len);
 	vcn_dec_cmd(it_addr, 0x204, &len);
 	vcn_dec_cmd(ctx_addr, 0x206, &len);
-	if(vcn_ip_version_major < 4)
-		vcn_dec_cmd(session_ctxbuf_addr, 0x5, &len);
 
 	if (vcn_dec_sw_ring == false) {
 		ib_cpu[len++] = reg[vcn_reg_index].cntl;
@@ -716,6 +708,7 @@ static void amdgpu_cs_vcn_dec_destroy(void)
 	memcpy(msg_buf.ptr, vcn_dec_destroy_msg, sizeof(vcn_dec_destroy_msg));
 
 	len = 0;
+	vcn_dec_cmd(session_ctx_buf.addr, 5, &len);
 	if (vcn_dec_sw_ring == true) {
 		vcn_dec_cmd(msg_buf.addr, 0, &len);
 	} else {
@@ -731,7 +724,6 @@ static void amdgpu_cs_vcn_dec_destroy(void)
 		}
 	}
 
-	vcn_dec_cmd(session_ctx_buf.addr, 5, &len);
 	if (vcn_unified_ring) {
 		amdgpu_cs_sq_ib_tail(ib_cpu + len);
 		ip = AMDGPU_HW_IP_VCN_ENC;
