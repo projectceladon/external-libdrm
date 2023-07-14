@@ -829,8 +829,6 @@ static const char *drmGetDeviceName(int type)
     switch (type) {
     case DRM_NODE_PRIMARY:
         return DRM_DEV_NAME;
-    case DRM_NODE_CONTROL:
-        return DRM_CONTROL_DEV_NAME;
     case DRM_NODE_RENDER:
         return DRM_RENDER_DEV_NAME;
     }
@@ -1026,8 +1024,6 @@ static int drmGetMinorBase(int type)
     switch (type) {
     case DRM_NODE_PRIMARY:
         return 0;
-    case DRM_NODE_CONTROL:
-        return 64;
     case DRM_NODE_RENDER:
         return 128;
     default:
@@ -1048,8 +1044,6 @@ static int drmGetMinorType(int major, int minor)
         // If not in /dev/drm/ we have the type in the name
         if (sscanf(name, "dri/card%d\n", &id) >= 1)
            return DRM_NODE_PRIMARY;
-        else if (sscanf(name, "dri/control%d\n", &id) >= 1)
-           return DRM_NODE_CONTROL;
         else if (sscanf(name, "dri/renderD%d\n", &id) >= 1)
            return DRM_NODE_RENDER;
         return -1;
@@ -1064,7 +1058,6 @@ static int drmGetMinorType(int major, int minor)
 
     switch (type) {
     case DRM_NODE_PRIMARY:
-    case DRM_NODE_CONTROL:
     case DRM_NODE_RENDER:
         return type;
     default:
@@ -1077,8 +1070,6 @@ static const char *drmGetMinorName(int type)
     switch (type) {
     case DRM_NODE_PRIMARY:
         return DRM_PRIMARY_MINOR_NAME;
-    case DRM_NODE_CONTROL:
-        return DRM_CONTROL_MINOR_NAME;
     case DRM_NODE_RENDER:
         return DRM_RENDER_MINOR_NAME;
     default:
@@ -1265,7 +1256,7 @@ drm_public int drmOpen(const char *name, const char *busid)
  *
  * \param name driver name. Not referenced if bus ID is supplied.
  * \param busid bus ID. Zero if not known.
- * \param type the device node type to open, PRIMARY, CONTROL or RENDER
+ * \param type the device node type to open, PRIMARY or RENDER
  *
  * \return a file descriptor on success, or a negative value on error.
  *
@@ -1298,7 +1289,7 @@ drm_public int drmOpenWithType(const char *name, const char *busid, int type)
 
 drm_public int drmOpenControl(int minor)
 {
-    return drmOpenMinor(minor, 0, DRM_NODE_CONTROL);
+    return -EINVAL;
 }
 
 drm_public int drmOpenRender(int minor)
@@ -3704,12 +3695,9 @@ static int get_sysctl_pci_bus_info(int maj, int min, drmPciBusInfoPtr info)
     switch (type) {
     case DRM_NODE_PRIMARY:
          break;
-    case DRM_NODE_CONTROL:
-         id -= 64;
-         break;
     case DRM_NODE_RENDER:
          id -= 128;
-          break;
+         break;
     }
     if (id < 0)
         return -EINVAL;
@@ -3821,10 +3809,6 @@ drm_public int drmDevicesEqual(drmDevicePtr a, drmDevicePtr b)
 
 static int drmGetNodeType(const char *name)
 {
-    if (strncmp(name, DRM_CONTROL_MINOR_NAME,
-        sizeof(DRM_CONTROL_MINOR_NAME ) - 1) == 0)
-        return DRM_NODE_CONTROL;
-
     if (strncmp(name, DRM_RENDER_MINOR_NAME,
         sizeof(DRM_RENDER_MINOR_NAME) - 1) == 0)
         return DRM_NODE_RENDER;
