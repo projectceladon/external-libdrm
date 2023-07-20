@@ -187,6 +187,7 @@ drmSLNext
 drmSwitchToContext
 drmSyncobjCreate
 drmSyncobjDestroy
+drmSyncobjEventfd
 drmSyncobjExportSyncFile
 drmSyncobjFDToHandle
 drmSyncobjHandleToFD

@@ -5102,6 +5102,20 @@ drm_public int drmSyncobjTransfer(int fd,
     return ret;
 }
 
+drm_public int drmSyncobjEventfd(int fd, uint32_t handle, uint64_t point, int ev_fd,
+                                 uint32_t flags)
+{
+    struct drm_syncobj_eventfd args;
+
+    memclear(args);
+    args.handle = handle;
+    args.point = point;
+    args.fd = ev_fd;
+    args.flags = flags;
+
+    return drmIoctl(fd, DRM_IOCTL_SYNCOBJ_EVENTFD, &args);
+}
+
 static char *
 drmGetFormatModifierFromSimpleTokens(uint64_t modifier)
 {
