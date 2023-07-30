@@ -70,6 +70,7 @@
 
 static enum util_fill_pattern primary_fill = UTIL_PATTERN_SMPTE;
 static enum util_fill_pattern secondary_fill = UTIL_PATTERN_TILES;
+static drmModeModeInfo user_mode;
 
 struct crtc {
 	drmModeCrtc *crtc;
@@ -853,7 +854,25 @@ connector_find_mode(struct device *dev, uint32_t con_id, const char *mode_str,
 	int i;
 
 	connector = get_connector_by_id(dev, con_id);
-	if (!connector || !connector->count_modes)
+	if (!connector)
+		return NULL;
+
+	if (strchr(mode_str, ',')) {
+		i = sscanf(mode_str, "%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu",
+			     &user_mode.hdisplay, &user_mode.hsync_start,
+			     &user_mode.hsync_end, &user_mode.htotal,
+			     &user_mode.vdisplay, &user_mode.vsync_start,
+			     &user_mode.vsync_end, &user_mode.vtotal);
+		if (i == 8) {
+			user_mode.clock = roundf(user_mode.htotal * user_mode.vtotal * vrefresh / 1000);
+			user_mode.vrefresh = roundf(vrefresh);
+			snprintf(user_mode.name, sizeof(user_mode.name), "custom%dx%d", user_mode.hdisplay, user_mode.vdisplay);
+
+			return &user_mode;
+		}
+	}
+
+	if (!connector->count_modes)
 		return NULL;
 
 	/* Pick by Index */
@@ -2103,6 +2122,7 @@ static void usage(char *name)
 	fprintf(stderr, "\n Test options:\n\n");
 	fprintf(stderr, "\t-P <plane_id>@<crtc_id>:<w>x<h>[+<x>+<y>][*<scale>][@<format>]\tset a plane\n");
 	fprintf(stderr, "\t-s <connector_id>[,<connector_id>][@<crtc_id>]:[#<mode index>]<mode>[-<vrefresh>][@<format>]\tset a mode\n");
+	fprintf(stderr, "\t\tcustom mode can be specified as <hdisplay>,<hsyncstart>,<hsyncend>,<htotal>,<vdisplay>,<vsyncstart>,<vsyncend>,<vtotal>\n");
 	fprintf(stderr, "\t-C\ttest hw cursor\n");
 	fprintf(stderr, "\t-v\ttest vsynced page flipping\n");
 	fprintf(stderr, "\t-r\tset the preferred mode for all connectors\n");
