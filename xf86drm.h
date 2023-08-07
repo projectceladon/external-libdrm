@@ -98,7 +98,7 @@ extern "C" {
      + MAX3(sizeof(DRM_PRIMARY_MINOR_NAME), \
             sizeof(DRM_CONTROL_MINOR_NAME), \
             sizeof(DRM_RENDER_MINOR_NAME)) \
-     + sizeof("144") /* highest possible node number */ \
+     + sizeof("1048575") /* highest possible node number 2^MINORBITS - 1 */ \
      + 1) /* NULL-terminator */
 
 #define DRM_ERR_NO_DEVICE  (-1001)
