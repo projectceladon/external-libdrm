@@ -330,7 +330,7 @@ static void dump_in_formats(struct device *dev, uint32_t blob_id)
 			printf(": ");
 		}
 
-		printf(" %s", modifier_to_string(iter.mod));
+		printf(" %s(0x%"PRIx64")", modifier_to_string(iter.mod), iter.mod);
 	}
 
 	printf("\n");
