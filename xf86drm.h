@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #ifndef DRM_MAX_MINOR
-#define DRM_MAX_MINOR   64
+#define DRM_MAX_MINOR   64 /* deprecated */
 #endif
 
 #if defined(__linux__)
