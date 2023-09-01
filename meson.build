@@ -266,7 +266,7 @@ test(
   args : [
     '--lib', libdrm,
     '--symbols-file', files('core-symbols.txt'),
-    '--nm', prog_nm.path(),
+    '--nm', prog_nm.full_path(),
   ],
 )
 
