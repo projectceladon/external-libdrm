@@ -87,8 +87,12 @@ dep_pciaccess = dependency('pciaccess', version : '>= 0.10', required : get_opti
 with_intel = false
 _intel = get_option('intel')
 if not _intel.disabled()
-  if _intel.enabled() and not with_atomics
-    error('libdrm_intel requires atomics.')
+  if _intel.enabled()
+    if not with_atomics
+      error('libdrm_intel requires atomics.')
+    elif not dep_pciaccess.found()
+      error('libdrm_intel requires libpciaccess')
+    endif
   else
     with_intel = (_intel.enabled() or host_machine.cpu_family().startswith('x86')) and with_atomics and dep_pciaccess.found()
   endif
