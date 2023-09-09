@@ -1158,6 +1158,11 @@ static void set_gamma(struct device *dev, unsigned crtc_id, unsigned fourcc)
 		util_smpte_c8_gamma(256, gamma_lut);
 		drmModeCreatePropertyBlob(dev->fd, gamma_lut, sizeof(gamma_lut), &blob_id);
 	} else {
+		/*
+		 * Initialize gamma_lut to a linear table for the legacy API below.
+		 * The modern property API resets to a linear/pass-thru table if blob_id
+		 * is 0, hence no PropertyBlob is created here.
+		 */
 		for (i = 0; i < 256; i++) {
 			gamma_lut[i].red =
 			gamma_lut[i].green =
