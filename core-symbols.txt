@@ -70,6 +70,7 @@ drmGetLibVersion
 drmGetLock
 drmGetMagic
 drmGetMap
+drmGetNodeTypeFromDevId
 drmGetNodeTypeFromFd
 drmGetPrimaryDeviceNameFromFd
 drmGetRenderDeviceNameFromFd

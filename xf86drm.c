@@ -4687,6 +4687,23 @@ drm_public int drmGetDeviceFromDevId(dev_t find_rdev, uint32_t flags, drmDeviceP
 #endif
 }
 
+drm_public int drmGetNodeTypeFromDevId(dev_t devid)
+{
+    int maj, min, node_type;
+
+    maj = major(devid);
+    min = minor(devid);
+
+    if (!drmNodeIsDRM(maj, min))
+        return -EINVAL;
+
+    node_type = drmGetMinorType(maj, min);
+    if (node_type == -1)
+        return -ENODEV;
+
+    return node_type;
+}
+
 /**
  * Get information about the opened drm device
  *
