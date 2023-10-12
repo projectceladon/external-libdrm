@@ -53,6 +53,10 @@ cc_library_headers {
     host_supported: true,
     defaults: ["libdrm_defaults"],
     export_include_dirs: ["include/drm", "android"],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.virt",
+    ],
 }
 
 // Library for the device
