@@ -87,7 +87,7 @@ dep_pciaccess = dependency('pciaccess', version : '>= 0.10', required : get_opti
 with_intel = get_option('intel') \
   .require(with_atomics, error_message : 'libdrm_intel requires atomics') \
   .require(dep_pciaccess.found(), error_message : 'libdrm_intel requires libpciaccess') \
-  .disable_auto_if(not host_machine.system().startswith('x86')) \
+  .disable_auto_if(not host_machine.cpu_family().startswith('x86')) \
   .allowed()
 summary('Intel', with_intel)
 
