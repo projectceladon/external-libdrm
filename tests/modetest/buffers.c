@@ -148,6 +148,12 @@ bo_create(int fd, unsigned int format,
 		bpp = 8;
 		break;
 
+	case DRM_FORMAT_NV15:
+	case DRM_FORMAT_NV20:
+	case DRM_FORMAT_NV30:
+		bpp = 10;
+		break;
+
 	case DRM_FORMAT_ARGB4444:
 	case DRM_FORMAT_XRGB4444:
 	case DRM_FORMAT_ABGR4444:
@@ -212,6 +218,7 @@ bo_create(int fd, unsigned int format,
 	switch (format) {
 	case DRM_FORMAT_NV12:
 	case DRM_FORMAT_NV21:
+	case DRM_FORMAT_NV15:
 	case DRM_FORMAT_YUV420:
 	case DRM_FORMAT_YVU420:
 		virtual_height = height * 3 / 2;
@@ -219,11 +226,13 @@ bo_create(int fd, unsigned int format,
 
 	case DRM_FORMAT_NV16:
 	case DRM_FORMAT_NV61:
+	case DRM_FORMAT_NV20:
 		virtual_height = height * 2;
 		break;
 
 	case DRM_FORMAT_NV24:
 	case DRM_FORMAT_NV42:
+	case DRM_FORMAT_NV30:
 		virtual_height = height * 3;
 		break;
 
@@ -263,6 +272,8 @@ bo_create(int fd, unsigned int format,
 	case DRM_FORMAT_NV21:
 	case DRM_FORMAT_NV16:
 	case DRM_FORMAT_NV61:
+	case DRM_FORMAT_NV15:
+	case DRM_FORMAT_NV20:
 		offsets[0] = 0;
 		handles[0] = bo->handle;
 		pitches[0] = bo->pitch;
@@ -276,6 +287,7 @@ bo_create(int fd, unsigned int format,
 
 	case DRM_FORMAT_NV24:
 	case DRM_FORMAT_NV42:
+	case DRM_FORMAT_NV30:
 		offsets[0] = 0;
 		handles[0] = bo->handle;
 		pitches[0] = bo->pitch;

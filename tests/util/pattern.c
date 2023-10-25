@@ -260,6 +260,148 @@ static void fill_smpte_yuv_planar(const struct util_yuv_info *yuv,
 	}
 }
 
+static void write_pixels_10bpp(unsigned char *mem,
+			       unsigned short a,
+			       unsigned short b,
+			       unsigned short c,
+			       unsigned short d)
+{
+	  mem[0] = (a & 0xff);
+	  mem[1] = ((a >> 8) & 0x3) | ((b & 0x3f) << 2);
+	  mem[2] = ((b >> 6) & 0xf) | ((c & 0xf) << 4);
+	  mem[3] = ((c >> 4) & 0x3f) | ((d & 0x3) << 6);
+	  mem[4] = ((d >> 2) & 0xff);
+}
+
+static void fill_smpte_yuv_planar_10bpp(const struct util_yuv_info *yuv,
+					unsigned char *y_mem,
+					unsigned char *uv_mem,
+					unsigned int width,
+					unsigned int height,
+					unsigned int stride)
+{
+	const struct color_yuv colors_top[] = {
+		MAKE_YUV_601(192, 192, 192),	/* grey */
+		MAKE_YUV_601(192, 192, 0),	/* yellow */
+		MAKE_YUV_601(0, 192, 192),	/* cyan */
+		MAKE_YUV_601(0, 192, 0),	/* green */
+		MAKE_YUV_601(192, 0, 192),	/* magenta */
+		MAKE_YUV_601(192, 0, 0),	/* red */
+		MAKE_YUV_601(0, 0, 192),	/* blue */
+	};
+	const struct color_yuv colors_middle[] = {
+		MAKE_YUV_601(0, 0, 192),	/* blue */
+		MAKE_YUV_601(19, 19, 19),	/* black */
+		MAKE_YUV_601(192, 0, 192),	/* magenta */
+		MAKE_YUV_601(19, 19, 19),	/* black */
+		MAKE_YUV_601(0, 192, 192),	/* cyan */
+		MAKE_YUV_601(19, 19, 19),	/* black */
+		MAKE_YUV_601(192, 192, 192),	/* grey */
+	};
+	const struct color_yuv colors_bottom[] = {
+		MAKE_YUV_601(0, 33, 76),	/* in-phase */
+		MAKE_YUV_601(255, 255, 255),	/* super white */
+		MAKE_YUV_601(50, 0, 106),	/* quadrature */
+		MAKE_YUV_601(19, 19, 19),	/* black */
+		MAKE_YUV_601(9, 9, 9),		/* 3.5% */
+		MAKE_YUV_601(19, 19, 19),	/* 7.5% */
+		MAKE_YUV_601(29, 29, 29),	/* 11.5% */
+		MAKE_YUV_601(19, 19, 19),	/* black */
+	};
+	unsigned int cs = yuv->chroma_stride;
+	unsigned int xsub = yuv->xsub;
+	unsigned int ysub = yuv->ysub;
+	unsigned int xstep = cs * xsub;
+	unsigned int x;
+	unsigned int y;
+
+	/* Luma */
+	for (y = 0; y < height * 6 / 9; ++y) {
+		for (x = 0; x < width; x += 4)
+			write_pixels_10bpp(&y_mem[(x * 5) / 4],
+				colors_top[(x+0) * 7 / width].y << 2,
+				colors_top[(x+1) * 7 / width].y << 2,
+				colors_top[(x+2) * 7 / width].y << 2,
+				colors_top[(x+3) * 7 / width].y << 2);
+		y_mem += stride;
+	}
+
+	for (; y < height * 7 / 9; ++y) {
+		for (x = 0; x < width; x += 4)
+			write_pixels_10bpp(&y_mem[(x * 5) / 4],
+				colors_middle[(x+0) * 7 / width].y << 2,
+				colors_middle[(x+1) * 7 / width].y << 2,
+				colors_middle[(x+2) * 7 / width].y << 2,
+				colors_middle[(x+3) * 7 / width].y << 2);
+		y_mem += stride;
+	}
+
+	for (; y < height; ++y) {
+		for (x = 0; x < width * 5 / 7; x += 4)
+			write_pixels_10bpp(&y_mem[(x * 5) / 4],
+				colors_bottom[(x+0) * 4 / (width * 5 / 7)].y << 2,
+				colors_bottom[(x+1) * 4 / (width * 5 / 7)].y << 2,
+				colors_bottom[(x+2) * 4 / (width * 5 / 7)].y << 2,
+				colors_bottom[(x+3) * 4 / (width * 5 / 7)].y << 2);
+		for (; x < width * 6 / 7; x += 4)
+			write_pixels_10bpp(&y_mem[(x * 5) / 4],
+				colors_bottom[((x+0) - width * 5 / 7) * 3 / (width / 7) + 4].y << 2,
+				colors_bottom[((x+1) - width * 5 / 7) * 3 / (width / 7) + 4].y << 2,
+				colors_bottom[((x+2) - width * 5 / 7) * 3 / (width / 7) + 4].y << 2,
+				colors_bottom[((x+3) - width * 5 / 7) * 3 / (width / 7) + 4].y << 2);
+		for (; x < width; x += 4)
+			write_pixels_10bpp(&y_mem[(x * 5) / 4],
+				colors_bottom[7].y << 2,
+				colors_bottom[7].y << 2,
+				colors_bottom[7].y << 2,
+				colors_bottom[7].y << 2);
+		y_mem += stride;
+	}
+
+	/* Chroma */
+	for (y = 0; y < height * 6 / 9; y += ysub) {
+		for (x = 0; x < width; x += xstep)
+			write_pixels_10bpp(&uv_mem[(x * 5) / xstep],
+				colors_top[(x+0) * 7 / width].u << 2,
+				colors_top[(x+0) * 7 / width].v << 2,
+				colors_top[(x+xsub) * 7 / width].u << 2,
+				colors_top[(x+xsub) * 7 / width].v << 2);
+		uv_mem += stride * cs / xsub;
+	}
+
+	for (; y < height * 7 / 9; y += ysub) {
+		for (x = 0; x < width; x += xstep)
+			write_pixels_10bpp(&uv_mem[(x * 5) / xstep],
+				colors_middle[(x+0) * 7 / width].u << 2,
+				colors_middle[(x+0) * 7 / width].v << 2,
+				colors_middle[(x+xsub) * 7 / width].u << 2,
+				colors_middle[(x+xsub) * 7 / width].v << 2);
+		uv_mem += stride * cs / xsub;
+	}
+
+	for (; y < height; y += ysub) {
+		for (x = 0; x < width * 5 / 7; x += xstep)
+			write_pixels_10bpp(&uv_mem[(x * 5) / xstep],
+				colors_bottom[(x+0) * 4 / (width * 5 / 7)].u << 2,
+				colors_bottom[(x+0) * 4 / (width * 5 / 7)].v << 2,
+				colors_bottom[(x+xsub) * 4 / (width * 5 / 7)].u << 2,
+				colors_bottom[(x+xsub) * 4 / (width * 5 / 7)].v << 2);
+		for (; x < width * 6 / 7; x += xstep)
+			write_pixels_10bpp(&uv_mem[(x * 5) / xstep],
+				colors_bottom[((x+0) - width * 5 / 7) * 3 / (width / 7) + 4].u << 2,
+				colors_bottom[((x+0) - width * 5 / 7) * 3 / (width / 7) + 4].v << 2,
+				colors_bottom[((x+xsub) - width * 5 / 7) * 3 / (width / 7) + 4].u << 2,
+				colors_bottom[((x+xsub) - width * 5 / 7) * 3 / (width / 7) + 4].v << 2);
+		for (; x < width; x += xstep)
+			write_pixels_10bpp(&uv_mem[(x * 5) / xstep],
+				colors_bottom[7].u << 2,
+				colors_bottom[7].v << 2,
+				colors_bottom[7].u << 2,
+				colors_bottom[7].v << 2);
+		uv_mem += stride * cs / xsub;
+	}
+}
+
 static void fill_smpte_yuv_packed(const struct util_yuv_info *yuv, void *mem,
 				  unsigned int width, unsigned int height,
 				  unsigned int stride)
@@ -1051,6 +1193,13 @@ static void fill_smpte(const struct util_format_info *info, void *planes[3],
 		return fill_smpte_yuv_planar(&info->yuv, planes[0], u, v,
 					     width, height, stride);
 
+	case DRM_FORMAT_NV15:
+	case DRM_FORMAT_NV20:
+	case DRM_FORMAT_NV30:
+		return fill_smpte_yuv_planar_10bpp(&info->yuv, planes[0],
+						   planes[1], width, height,
+						   stride);
+
 	case DRM_FORMAT_YUV420:
 		return fill_smpte_yuv_planar(&info->yuv, planes[0], planes[1],
 					     planes[2], width, height, stride);
@@ -1182,6 +1331,18 @@ static void make_pwetty(void *data, unsigned int width, unsigned int height,
 #endif
 }
 
+static struct color_yuv make_tiles_yuv_color(unsigned int x, unsigned int y,
+					     unsigned int width)
+{
+	div_t d = div(x+y, width);
+	uint32_t rgb32 = 0x00130502 * (d.quot >> 6)
+		       + 0x000a1120 * (d.rem >> 6);
+	struct color_yuv color =
+		MAKE_YUV_601((rgb32 >> 16) & 0xff, (rgb32 >> 8) & 0xff,
+			     rgb32 & 0xff);
+	return color;
+}
+
 static void fill_tiles_yuv_planar(const struct util_format_info *info,
 				  unsigned char *y_mem, unsigned char *u_mem,
 				  unsigned char *v_mem, unsigned int width,
@@ -1196,12 +1357,8 @@ static void fill_tiles_yuv_planar(const struct util_format_info *info,
 
 	for (y = 0; y < height; ++y) {
 		for (x = 0; x < width; ++x) {
-			div_t d = div(x+y, width);
-			uint32_t rgb32 = 0x00130502 * (d.quot >> 6)
-				       + 0x000a1120 * (d.rem >> 6);
 			struct color_yuv color =
-				MAKE_YUV_601((rgb32 >> 16) & 0xff,
-					     (rgb32 >> 8) & 0xff, rgb32 & 0xff);
+				make_tiles_yuv_color(x, y, width);
 
 			y_mem[x] = color.y;
 			u_mem[x/xsub*cs] = color.u;
@@ -1213,6 +1370,45 @@ static void fill_tiles_yuv_planar(const struct util_format_info *info,
 			u_mem += stride * cs / xsub;
 			v_mem += stride * cs / xsub;
 		}
+	}
+}
+
+static void fill_tiles_yuv_planar_10bpp(const struct util_format_info *info,
+					unsigned char *y_mem,
+					unsigned char *uv_mem,
+					unsigned int width,
+					unsigned int height,
+					unsigned int stride)
+{
+	const struct util_yuv_info *yuv = &info->yuv;
+	unsigned int cs = yuv->chroma_stride;
+	unsigned int xsub = yuv->xsub;
+	unsigned int ysub = yuv->ysub;
+	unsigned int xstep = cs * xsub;
+	unsigned int x;
+	unsigned int y;
+
+	for (y = 0; y < height; ++y) {
+		for (x = 0; x < width; x += 4) {
+			struct color_yuv a = make_tiles_yuv_color(x+0, y, width);
+			struct color_yuv b = make_tiles_yuv_color(x+1, y, width);
+			struct color_yuv c = make_tiles_yuv_color(x+2, y, width);
+			struct color_yuv d = make_tiles_yuv_color(x+3, y, width);
+
+			write_pixels_10bpp(&y_mem[(x * 5) / 4],
+				a.y << 2, b.y << 2, c.y << 2, d.y << 2);
+		}
+		y_mem += stride;
+	}
+	for (y = 0; y < height; y += ysub) {
+		for (x = 0; x < width; x += xstep) {
+			struct color_yuv a = make_tiles_yuv_color(x+0, y, width);
+			struct color_yuv b = make_tiles_yuv_color(x+xsub, y, width);
+
+			write_pixels_10bpp(&uv_mem[(x * 5) / xstep],
+				a.u << 2, a.v << 2, b.u << 2, b.v << 2);
+		}
+		uv_mem += stride * cs / xsub;
 	}
 }
 
@@ -1230,12 +1426,8 @@ static void fill_tiles_yuv_packed(const struct util_format_info *info,
 
 	for (y = 0; y < height; ++y) {
 		for (x = 0; x < width; x += 2) {
-			div_t d = div(x+y, width);
-			uint32_t rgb32 = 0x00130502 * (d.quot >> 6)
-				       + 0x000a1120 * (d.rem >> 6);
 			struct color_yuv color =
-				MAKE_YUV_601((rgb32 >> 16) & 0xff,
-					     (rgb32 >> 8) & 0xff, rgb32 & 0xff);
+				make_tiles_yuv_color(x, y, width);
 
 			y_mem[2*x] = color.y;
 			c_mem[2*x+u] = color.u;
@@ -1372,6 +1564,12 @@ static void fill_tiles(const struct util_format_info *info, void *planes[3],
 		v = info->yuv.order & YUV_YCrCb ? planes[1] : planes[1] + 1;
 		return fill_tiles_yuv_planar(info, planes[0], u, v,
 					     width, height, stride);
+
+	case DRM_FORMAT_NV15:
+	case DRM_FORMAT_NV20:
+	case DRM_FORMAT_NV30:
+		return fill_tiles_yuv_planar_10bpp(info, planes[0], planes[1],
+						   width, height, stride);
 
 	case DRM_FORMAT_YUV420:
 		return fill_tiles_yuv_planar(info, planes[0], planes[1],
