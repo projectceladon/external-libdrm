@@ -315,6 +315,13 @@ int drmModeAddFB2WithModifiers(int fd, uint32_t width, uint32_t height,
 extern int drmModeRmFB(int fd, uint32_t bufferId);
 
 /**
+ * Close a framebuffer.
+ *
+ * Same as drmModeRmFB(), except it doesn't implicitly disable planes and CRTCs.
+ */
+extern int drmModeCloseFB(int fd, uint32_t buffer_id);
+
+/**
  * Mark a region of a framebuffer as dirty.
  */
 extern int drmModeDirtyFB(int fd, uint32_t bufferId,

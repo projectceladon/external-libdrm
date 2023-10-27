@@ -320,6 +320,16 @@ drm_public int drmModeRmFB(int fd, uint32_t bufferId)
 	return DRM_IOCTL(fd, DRM_IOCTL_MODE_RMFB, &bufferId);
 }
 
+drm_public int drmModeCloseFB(int fd, uint32_t buffer_id)
+{
+	struct drm_mode_closefb closefb;
+
+	memclear(closefb);
+	closefb.fb_id = buffer_id;
+
+	return DRM_IOCTL(fd, DRM_IOCTL_MODE_CLOSEFB, &closefb);
+}
+
 drm_public drmModeFBPtr drmModeGetFB(int fd, uint32_t buf)
 {
 	struct drm_mode_fb_cmd info;
