@@ -29,6 +29,7 @@
 131B,	00,	AMD Radeon R4 Graphics
 131C,	00,	AMD Radeon R7 Graphics
 131D,	00,	AMD Radeon R6 Graphics
+1435,	AE,	AMD Custom GPU 0932
 1506,	C1,	AMD Radeon 610M
 1506,	C2,	AMD Radeon 610M
 1506,	C3,	AMD Radeon 610M
@@ -140,6 +141,7 @@
 15DD,	E1,	AMD Radeon Vega 3 Graphics
 15DD,	E2,	AMD Radeon Vega 3 Graphics
 163F,	AE,	AMD Custom GPU 0405
+163F,	E1,	AMD Custom GPU 0405
 164E,	D8,	AMD Radeon 610M
 164E,	D9,	AMD Radeon 610M
 164E,	DA,	AMD Radeon 610M
