@@ -149,7 +149,6 @@ drm_public int amdgpu_device_initialize(int fd,
 	int flag_auth = 0;
 	int flag_authexist=0;
 	uint32_t accel_working = 0;
-	uint64_t start, max;
 
 	*device_handle = NULL;
 
@@ -236,27 +235,12 @@ drm_public int amdgpu_device_initialize(int fd,
 		goto cleanup;
 	}
 
-	start = dev->dev_info.virtual_address_offset;
-	max = MIN2(dev->dev_info.virtual_address_max, 0x100000000ULL);
-	amdgpu_vamgr_init(&dev->va_mgr.vamgr_32, start, max,
-			  dev->dev_info.virtual_address_alignment);
-
-	start = max;
-	max = MAX2(dev->dev_info.virtual_address_max, 0x100000000ULL);
-	amdgpu_vamgr_init(&dev->va_mgr.vamgr_low, start, max,
-			  dev->dev_info.virtual_address_alignment);
-
-	start = dev->dev_info.high_va_offset;
-	max = MIN2(dev->dev_info.high_va_max, (start & ~0xffffffffULL) +
-		   0x100000000ULL);
-	amdgpu_vamgr_init(&dev->va_mgr.vamgr_high_32, start, max,
-			  dev->dev_info.virtual_address_alignment);
-
-	start = max;
-	max = MAX2(dev->dev_info.high_va_max, (start & ~0xffffffffULL) +
-		   0x100000000ULL);
-	amdgpu_vamgr_init(&dev->va_mgr.vamgr_high, start, max,
-			  dev->dev_info.virtual_address_alignment);
+	amdgpu_va_manager_init(&dev->va_mgr,
+			       dev->dev_info.virtual_address_offset,
+			       dev->dev_info.virtual_address_max,
+			       dev->dev_info.high_va_offset,
+			       dev->dev_info.high_va_max,
+			       dev->dev_info.virtual_address_alignment);
 
 	amdgpu_parse_asic_ids(dev);
 

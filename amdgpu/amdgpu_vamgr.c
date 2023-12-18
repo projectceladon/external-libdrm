@@ -300,3 +300,45 @@ drm_public uint64_t amdgpu_va_get_start_addr(amdgpu_va_handle va_handle)
 {
    return va_handle->address;
 }
+
+drm_public amdgpu_va_manager_handle amdgpu_va_manager_alloc(void)
+{
+	amdgpu_va_manager_handle r = calloc(1, sizeof(struct amdgpu_va_manager));
+	return r;
+}
+
+drm_public void amdgpu_va_manager_init(struct amdgpu_va_manager *va_mgr,
+					uint64_t low_va_offset, uint64_t low_va_max,
+					uint64_t high_va_offset, uint64_t high_va_max,
+					uint32_t virtual_address_alignment)
+{
+	uint64_t start, max;
+
+	start = low_va_offset;
+	max = MIN2(low_va_max, 0x100000000ULL);
+	amdgpu_vamgr_init(&va_mgr->vamgr_32, start, max,
+			  virtual_address_alignment);
+
+	start = max;
+	max = MAX2(low_va_max, 0x100000000ULL);
+	amdgpu_vamgr_init(&va_mgr->vamgr_low, start, max,
+			  virtual_address_alignment);
+
+	start = high_va_offset;
+	max = MIN2(high_va_max, (start & ~0xffffffffULL) + 0x100000000ULL);
+	amdgpu_vamgr_init(&va_mgr->vamgr_high_32, start, max,
+			  virtual_address_alignment);
+
+	start = max;
+	max = MAX2(high_va_max, (start & ~0xffffffffULL) + 0x100000000ULL);
+	amdgpu_vamgr_init(&va_mgr->vamgr_high, start, max,
+			  virtual_address_alignment);
+}
+
+drm_public void amdgpu_va_manager_deinit(struct amdgpu_va_manager *va_mgr)
+{
+	amdgpu_vamgr_deinit(&va_mgr->vamgr_32);
+	amdgpu_vamgr_deinit(&va_mgr->vamgr_low);
+	amdgpu_vamgr_deinit(&va_mgr->vamgr_high_32);
+	amdgpu_vamgr_deinit(&va_mgr->vamgr_high);
+}

@@ -139,6 +139,12 @@ typedef struct amdgpu_bo_list *amdgpu_bo_list_handle;
 typedef struct amdgpu_va *amdgpu_va_handle;
 
 /**
+ * Define handle dealing with VA allocation. An amdgpu_device
+ * owns one of these, but they can also be used without a device.
+ */
+typedef struct amdgpu_va_manager *amdgpu_va_manager_handle;
+
+/**
  * Define handle for semaphore
  */
 typedef struct amdgpu_semaphore *amdgpu_semaphore_handle;
@@ -1409,6 +1415,23 @@ int amdgpu_va_range_query(amdgpu_device_handle dev,
 			  enum amdgpu_gpu_va_range type,
 			  uint64_t *start,
 			  uint64_t *end);
+
+/**
+ * Allocate a amdgpu_va_manager object.
+ * The returned object has be initialized with the amdgpu_va_manager_init
+ * before use.
+ * On release, amdgpu_va_manager_deinit needs to be called, then the memory
+ * can be released using free().
+ */
+amdgpu_va_manager_handle amdgpu_va_manager_alloc(void);
+
+void amdgpu_va_manager_init(amdgpu_va_manager_handle va_mgr,
+			    uint64_t low_va_offset, uint64_t low_va_max,
+			    uint64_t high_va_offset, uint64_t high_va_max,
+			    uint32_t virtual_address_alignment);
+
+void amdgpu_va_manager_deinit(amdgpu_va_manager_handle va_mgr);
+
 
 /**
  *  VA mapping/unmapping for the buffer object
