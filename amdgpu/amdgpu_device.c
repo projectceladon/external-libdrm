@@ -105,10 +105,10 @@ static void amdgpu_device_free_internal(amdgpu_device_handle dev)
 	if ((dev->flink_fd >= 0) && (dev->fd != dev->flink_fd))
 		close(dev->flink_fd);
 
-	amdgpu_vamgr_deinit(&dev->vamgr_32);
-	amdgpu_vamgr_deinit(&dev->vamgr);
-	amdgpu_vamgr_deinit(&dev->vamgr_high_32);
-	amdgpu_vamgr_deinit(&dev->vamgr_high);
+	amdgpu_vamgr_deinit(&dev->va_mgr.vamgr_32);
+	amdgpu_vamgr_deinit(&dev->va_mgr.vamgr_low);
+	amdgpu_vamgr_deinit(&dev->va_mgr.vamgr_high_32);
+	amdgpu_vamgr_deinit(&dev->va_mgr.vamgr_high);
 	handle_table_fini(&dev->bo_handles);
 	handle_table_fini(&dev->bo_flink_names);
 	pthread_mutex_destroy(&dev->bo_table_mutex);
@@ -238,24 +238,24 @@ drm_public int amdgpu_device_initialize(int fd,
 
 	start = dev->dev_info.virtual_address_offset;
 	max = MIN2(dev->dev_info.virtual_address_max, 0x100000000ULL);
-	amdgpu_vamgr_init(&dev->vamgr_32, start, max,
+	amdgpu_vamgr_init(&dev->va_mgr.vamgr_32, start, max,
 			  dev->dev_info.virtual_address_alignment);
 
 	start = max;
 	max = MAX2(dev->dev_info.virtual_address_max, 0x100000000ULL);
-	amdgpu_vamgr_init(&dev->vamgr, start, max,
+	amdgpu_vamgr_init(&dev->va_mgr.vamgr_low, start, max,
 			  dev->dev_info.virtual_address_alignment);
 
 	start = dev->dev_info.high_va_offset;
 	max = MIN2(dev->dev_info.high_va_max, (start & ~0xffffffffULL) +
 		   0x100000000ULL);
-	amdgpu_vamgr_init(&dev->vamgr_high_32, start, max,
+	amdgpu_vamgr_init(&dev->va_mgr.vamgr_high_32, start, max,
 			  dev->dev_info.virtual_address_alignment);
 
 	start = max;
 	max = MAX2(dev->dev_info.high_va_max, (start & ~0xffffffffULL) +
 		   0x100000000ULL);
-	amdgpu_vamgr_init(&dev->vamgr_high, start, max,
+	amdgpu_vamgr_init(&dev->va_mgr.vamgr_high, start, max,
 			  dev->dev_info.virtual_address_alignment);
 
 	amdgpu_parse_asic_ids(dev);
@@ -306,10 +306,10 @@ drm_public int amdgpu_query_sw_info(amdgpu_device_handle dev,
 
 	switch (info) {
 	case amdgpu_sw_info_address32_hi:
-		if (dev->vamgr_high_32.va_max)
-			*val32 = (dev->vamgr_high_32.va_max - 1) >> 32;
+		if (dev->va_mgr.vamgr_high_32.va_max)
+			*val32 = (dev->va_mgr.vamgr_high_32.va_max - 1) >> 32;
 		else
-			*val32 = (dev->vamgr_32.va_max - 1) >> 32;
+			*val32 = (dev->va_mgr.vamgr_32.va_max - 1) >> 32;
 		return 0;
 	}
 	return -EINVAL;

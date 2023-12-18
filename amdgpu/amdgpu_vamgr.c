@@ -234,19 +234,19 @@ drm_public int amdgpu_va_range_alloc(amdgpu_device_handle dev,
 	int ret;
 
 	/* Clear the flag when the high VA manager is not initialized */
-	if (flags & AMDGPU_VA_RANGE_HIGH && !dev->vamgr_high_32.va_max)
+	if (flags & AMDGPU_VA_RANGE_HIGH && !dev->va_mgr.vamgr_high_32.va_max)
 		flags &= ~AMDGPU_VA_RANGE_HIGH;
 
 	if (flags & AMDGPU_VA_RANGE_HIGH) {
 		if (flags & AMDGPU_VA_RANGE_32_BIT)
-			vamgr = &dev->vamgr_high_32;
+			vamgr = &dev->va_mgr.vamgr_high_32;
 		else
-			vamgr = &dev->vamgr_high;
+			vamgr = &dev->va_mgr.vamgr_high;
 	} else {
 		if (flags & AMDGPU_VA_RANGE_32_BIT)
-			vamgr = &dev->vamgr_32;
+			vamgr = &dev->va_mgr.vamgr_32;
 		else
-			vamgr = &dev->vamgr;
+			vamgr = &dev->va_mgr.vamgr_low;
 	}
 
 	va_base_alignment = MAX2(va_base_alignment, vamgr->va_alignment);
@@ -259,9 +259,9 @@ drm_public int amdgpu_va_range_alloc(amdgpu_device_handle dev,
 	if (!(flags & AMDGPU_VA_RANGE_32_BIT) && ret) {
 		/* fallback to 32bit address */
 		if (flags & AMDGPU_VA_RANGE_HIGH)
-			vamgr = &dev->vamgr_high_32;
+			vamgr = &dev->va_mgr.vamgr_high_32;
 		else
-			vamgr = &dev->vamgr_32;
+			vamgr = &dev->va_mgr.vamgr_32;
 		ret = amdgpu_vamgr_find_va(vamgr, size,
 					   va_base_alignment, va_base_required,
 					   search_from_top, va_base_allocated);
