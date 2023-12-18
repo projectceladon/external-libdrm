@@ -75,6 +75,7 @@ amdgpu_va_manager_alloc
 amdgpu_va_manager_init
 amdgpu_va_manager_deinit
 amdgpu_va_range_alloc
+amdgpu_va_range_alloc2
 amdgpu_va_range_free
 amdgpu_va_get_start_addr
 amdgpu_va_range_query

@@ -1432,6 +1432,20 @@ void amdgpu_va_manager_init(amdgpu_va_manager_handle va_mgr,
 
 void amdgpu_va_manager_deinit(amdgpu_va_manager_handle va_mgr);
 
+/**
+ * Similar to #amdgpu_va_range_alloc() but allocates VA
+ * directly from an amdgpu_va_manager_handle instead of using
+ * the manager from an amdgpu_device.
+ */
+
+int amdgpu_va_range_alloc2(amdgpu_va_manager_handle va_mgr,
+			   enum amdgpu_gpu_va_range va_range_type,
+			   uint64_t size,
+			   uint64_t va_base_alignment,
+			   uint64_t va_base_required,
+			   uint64_t *va_base_allocated,
+			   amdgpu_va_handle *va_range_handle,
+			   uint64_t flags);
 
 /**
  *  VA mapping/unmapping for the buffer object
