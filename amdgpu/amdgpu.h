@@ -1385,6 +1385,11 @@ int amdgpu_va_range_alloc(amdgpu_device_handle dev,
 int amdgpu_va_range_free(amdgpu_va_handle va_range_handle);
 
 /**
+ * Return the starting address of the allocated virtual address range.
+ */
+uint64_t amdgpu_va_get_start_addr(amdgpu_va_handle va_handle);
+
+/**
 * Query virtual address range
 *
 * UMD can query GPU VM range supported by each device

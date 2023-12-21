@@ -295,3 +295,8 @@ drm_public int amdgpu_va_range_free(amdgpu_va_handle va_range_handle)
 	free(va_range_handle);
 	return 0;
 }
+
+drm_public uint64_t amdgpu_va_get_start_addr(amdgpu_va_handle va_handle)
+{
+   return va_handle->address;
+}
