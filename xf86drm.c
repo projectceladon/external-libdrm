@@ -4479,7 +4479,10 @@ process_device(drmDevicePtr *device, const char *d_name,
         return -1;
 
     snprintf(node, PATH_MAX, "%s/%s", DRM_DIR_NAME, d_name);
-    if (stat(node, &sbuf))
+    if (lstat(node, &sbuf))
+        return -1;
+
+    if (S_ISLNK(sbuf.st_mode))
         return -1;
 
     maj = major(sbuf.st_rdev);
