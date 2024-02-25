@@ -97,11 +97,9 @@ static void amdgpu_device_free_internal(amdgpu_device_handle dev)
 {
 	amdgpu_device_handle *node = &dev_list;
 
-	pthread_mutex_lock(&dev_mutex);
 	while (*node != dev && (*node)->next)
 		node = &(*node)->next;
 	*node = (*node)->next;
-	pthread_mutex_unlock(&dev_mutex);
 
 	close(dev->fd);
 	if ((dev->flink_fd >= 0) && (dev->fd != dev->flink_fd))
@@ -281,7 +279,9 @@ cleanup:
 
 drm_public int amdgpu_device_deinitialize(amdgpu_device_handle dev)
 {
+	pthread_mutex_lock(&dev_mutex);
 	amdgpu_device_reference(&dev, NULL);
+	pthread_mutex_unlock(&dev_mutex);
 	return 0;
 }
 
