@@ -51,6 +51,9 @@
 15BF,	CB,	AMD Radeon 760M
 15BF,	CD,	AMD Radeon 760M
 15BF,	CF,	AMD Radeon 780M
+15BF,	D0,	AMD Radeon 780M
+15BF,	D1,	AMD Radeon 780M
+15BF,	D2,	AMD Radeon 760M
 15BF,	D3,	AMD Radeon 780M
 15BF,	D4,	AMD Radeon 780M
 15BF,	D5,	AMD Radeon 760M
@@ -60,15 +63,19 @@
 15BF,	D9,	AMD Radeon 780M
 15BF,	DA,	AMD Radeon 780M
 15BF,	DB,	AMD Radeon 760M
+15BF,	DC,	AMD Radeon 780M
 15BF,	DD,	AMD Radeon 780M
 15BF,	DE,	AMD Radeon 740M
+15BF,	DF,	AMD Radeon 760M
 15BF,	F0,	AMD Radeon 760M
 15C8,	C1,	AMD Radeon 740M
 15C8,	C2,	AMD Radeon 740M
 15C8,	C3,	AMD Radeon 740M
 15C8,	C4,	AMD Radeon 740M
 15C8,	D1,	AMD Radeon 740M
+15C8,	D2,	AMD Radeon 740M
 15C8,	D3,	AMD Radeon 740M
+15C8,	D4,	AMD Radeon 740M
 15D8,	00,	AMD Radeon RX Vega 8 Graphics WS
 15D8,	91,	AMD Radeon Vega 3 Graphics
 15D8,	91,	AMD Ryzen Embedded R1606G with Radeon Vega Gfx
