@@ -1657,13 +1657,14 @@ struct drm_i915_gem_caching {
 #define I915_TILING_NONE	0
 #define I915_TILING_X		1
 #define I915_TILING_Y		2
+#define I915_TILING_4		9
+#define I915_TILING_LAST	I915_TILING_4
 /*
  * Do not add new tiling types here.  The I915_TILING_* values are for
  * de-tiling fence registers that no longer exist on modern platforms.  Although
  * the hardware may support new types of tiling in general (e.g., Tile4), we
  * do not need to add them to the uapi that is specific to now-defunct ioctls.
  */
-#define I915_TILING_LAST	I915_TILING_Y
 
 #define I915_BIT_6_SWIZZLE_NONE		0
 #define I915_BIT_6_SWIZZLE_9		1
@@ -3410,6 +3411,44 @@ struct drm_i915_memory_region_info {
 	};
 };
 
+struct drm_i915_gem_object_param {
+	/* Object handle (0 for I915_GEM_CREATE_EXT_SETPARAM) */
+	__u32 handle;
+
+	/* Data pointer size */
+	__u32 size;
+
+/*
+ * I915_OBJECT_PARAM:
+ *
+ * Select object namespace for the param.
+ */
+#define I915_OBJECT_PARAM (1ull << 32)
+
+/*
+ * I915_PARAM_MEMORY_REGIONS:
+ *
+ * Set the data pointer with the desired set of placements in priority
+ * order(each entry must be unique and supported by the device), as an array of
+ * drm_i915_gem_memory_class_instance, or an equivalent layout of class:instance
+ * pair encodings. See DRM_I915_QUERY_MEMORY_REGIONS for how to query the
+ * supported regions.
+ *
+ * Note that this requires the I915_OBJECT_PARAM namespace:
+ *	.param = I915_OBJECT_PARAM | I915_PARAM_MEMORY_REGIONS
+ */
+#define I915_PARAM_MEMORY_REGIONS 0x1
+	__u64 param;
+
+	/* Data value or pointer */
+	__u64 data;
+};
+
+struct drm_i915_gem_create_ext_setparam {
+	struct i915_user_extension base;
+	struct drm_i915_gem_object_param param;
+};
+
 /**
  * struct drm_i915_query_memory_regions
  *
@@ -3598,6 +3637,8 @@ struct drm_i915_gem_create_ext {
 	 * For I915_GEM_CREATE_EXT_PROTECTED_CONTENT usage see
 	 * struct drm_i915_gem_create_ext_protected_content.
 	 */
+#define I915_GEM_CREATE_EXT_SETPARAM (1u << 0)
+#define I915_GEM_CREATE_EXT_FLAGS_UNKNOWN (-(I915_GEM_CREATE_EXT_SETPARAM << 1))
 #define I915_GEM_CREATE_EXT_MEMORY_REGIONS 0
 #define I915_GEM_CREATE_EXT_PROTECTED_CONTENT 1
 	__u64 extensions;
