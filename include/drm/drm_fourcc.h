@@ -555,6 +555,8 @@ extern "C" {
 #define I915_FORMAT_MOD_Y_TILED_CCS	fourcc_mod_code(INTEL, 4)
 #define I915_FORMAT_MOD_Yf_TILED_CCS	fourcc_mod_code(INTEL, 5)
 
+#define I915_FORMAT_MOD_4_TILED fourcc_mod_code(INTEL, 9)
+
 /*
  * Intel color control surfaces (CCS) for Gen-12 render compression.
  *
