@@ -17,6 +17,9 @@ PLATFORM_SYMBOLS = [
     '_end',
     '_fini',
     '_init',
+    '_fbss',
+    '_fdata',
+    '_ftext',
 ]
 
 
