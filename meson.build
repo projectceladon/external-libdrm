@@ -235,7 +235,7 @@ config_file = configure_file(
   configuration : config,
   output : 'config.h',
 )
-add_project_arguments('-include', '@0@'.format(config_file), language : 'c')
+add_project_arguments('-include', meson.current_build_dir() / 'config.h', language : 'c')
 
 inc_root = include_directories('.')
 inc_drm = include_directories('include/drm')
