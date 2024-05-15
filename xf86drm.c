@@ -60,7 +60,6 @@
 #if HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#include <math.h>
 #include <inttypes.h>
 
 #if defined(__FreeBSD__)

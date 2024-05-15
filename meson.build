@@ -154,7 +154,6 @@ if not cc.has_function('clock_gettime', prefix : '#define _GNU_SOURCE\n#include 
 else
   dep_rt = []
 endif
-dep_m = cc.find_library('m', required : false)
 
 # The header is not required on Linux, and is in fact deprecated in glibc 2.30+
 if ['linux'].contains(host_machine.system())
@@ -258,7 +257,7 @@ libdrm = library(
   'drm',
   libdrm_files,
   c_args : libdrm_c_args,
-  dependencies : [dep_valgrind, dep_rt, dep_m],
+  dependencies : [dep_valgrind, dep_rt],
   include_directories : inc_drm,
   install : true,
   kwargs : libdrm_kw,
