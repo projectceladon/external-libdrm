@@ -111,7 +111,7 @@ static const struct shader_test_cs_shader shader_test_cs[AMDGPU_TEST_GFX_MAX][2]
 #define SHADER_PS_INFO(_ps, _n) \
 	{ps_##_ps##_shader_gfx##_n, sizeof(ps_##_ps##_shader_gfx##_n), \
 	ps_##_ps##_shader_patchinfo_code_size_gfx##_n, \
-	ps_##_ps##_shader_patchinfo_code_gfx##_n, \
+	&(ps_##_ps##_shader_patchinfo_code_gfx##_n)[0][0][0], \
 	ps_##_ps##_shader_patchinfo_offset_gfx##_n, \
 	ps_##_ps##_sh_registers_gfx##_n, ps_##_ps##_num_sh_registers_gfx##_n, \
 	ps_##_ps##_context_registers_gfx##_n, ps_##_ps##_num_context_registers_gfx##_n}
