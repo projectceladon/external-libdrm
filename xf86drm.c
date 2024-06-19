@@ -4595,6 +4595,7 @@ drm_public int drmGetDeviceFromDevId(dev_t find_rdev, uint32_t flags, drmDeviceP
     int              node_type, subsystem_type;
     int              maj, min, n, ret;
     const int        max_node_length = ALIGN(drmGetMaxNodeName(), sizeof(void *));
+    struct stat      sbuf;
 
     if (device == NULL)
         return -EINVAL;
@@ -4619,8 +4620,8 @@ drm_public int drmGetDeviceFromDevId(dev_t find_rdev, uint32_t flags, drmDeviceP
     n = snprintf(node, PATH_MAX, dev_name, DRM_DIR_NAME, min);
     if (n == -1 || n >= PATH_MAX)
       return -errno;
-    if (written + 1 > max_node_length)
-        return -EINVAL
+    if (n + 1 > max_node_length)
+        return -EINVAL;
     if (stat(node, &sbuf))
         return -EINVAL;
 
