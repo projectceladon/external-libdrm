@@ -46,6 +46,12 @@ cc = meson.get_compiler('c')
 
 android = cc.compiles('''int func() { return __ANDROID__; }''')
 
+# Solaris / Illumos
+if host_machine.system() == 'sunos'
+  add_global_arguments('-D__EXTENSIONS__', language : 'c')
+  add_global_arguments('-D_POSIX_C_SOURCE=3', language : 'c')
+endif
+
 symbols_check = find_program('symbols-check.py')
 prog_nm = find_program('nm')
 
