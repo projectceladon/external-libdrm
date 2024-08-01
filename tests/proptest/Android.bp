@@ -1,4 +1,4 @@
-cc_test {
+cc_binary {
     name: "proptest",
     defaults: ["libdrm_defaults"],
     srcs: ["proptest.c"],

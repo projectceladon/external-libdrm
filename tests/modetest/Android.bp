@@ -1,6 +1,6 @@
 build = ["Android.sources.bp"]
 
-cc_test {
+cc_binary {
     name: "modetest",
     defaults: [
         "libdrm_defaults",
