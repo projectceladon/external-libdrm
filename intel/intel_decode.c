@@ -656,8 +656,7 @@ i915_get_instruction_dst(uint32_t *data, int i, char *dstname, int do_mask)
 
 	switch ((a0 >> 19) & 0x7) {
 	case 0:
-		if (dst_nr > 15)
-			fprintf(out, "bad destination reg R%d\n", dst_nr);
+                //The value of dst_nr must be between 0 and 15.
 		sprintf(dstname, "R%d%s%s", dst_nr, dstmask, sat);
 		break;
 	case 4:
@@ -988,8 +987,9 @@ i915_decode_dcl(struct drm_intel_decode *ctx, int i, char *instr_prefix)
 			sampletype = "RESERVED";
 			break;
 		}
-		if (dcl_nr > 15)
-			fprintf(out, "bad S%d dcl register number\n", dcl_nr);
+		//The condition dcl_nr > 15 cannot be true.
+		//if (dcl_nr > 15)
+		//	fprintf(out, "bad S%d dcl register number\n", dcl_nr);
 		instr_out(ctx, i++, "%s: DCL S%d %s\n",
 			  instr_prefix, dcl_nr, sampletype);
 		instr_out(ctx, i++, "%s\n", instr_prefix);
@@ -1114,7 +1114,8 @@ decode_compare_func(uint32_t op)
 	case 7:
 		return "gequal";
 	}
-	return "";
+	// Adding an assertion to indicate that this point should never be reached.
+	__builtin_unreachable();
 }
 
 static const char *
@@ -1138,7 +1139,8 @@ decode_stencil_op(uint32_t op)
 	case 7:
 		return "decr";
 	}
-	return "";
+	// Adding an assertion to indicate that this point should never be reached.
+	__builtin_unreachable();
 }
 
 #if 0
@@ -3834,9 +3836,6 @@ drm_intel_decode_context_alloc(uint32_t devid)
 	else
 		/* Just assume future unknown platforms behave as gen8. */
 		gen = 8;
-
-	if (!gen)
-		return NULL;
 
 	ctx = calloc(1, sizeof(struct drm_intel_decode));
 	if (!ctx)

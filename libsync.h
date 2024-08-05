@@ -89,7 +89,14 @@ static inline int sync_merge(const char *name, int fd1, int fd2)
 	int ret;
 
 	data.fd2 = fd2;
-	strncpy(data.name, name, sizeof(data.name));
+
+	if (sizeof(data.name) < strlen(name)) {
+		strncpy(data.name, name, sizeof(data.name));
+		data.name[sizeof(data.name) - 1] = '\0';
+	} else {
+		strncpy(data.name, name, strlen(name) - 1);
+		data.name[strlen(name)] = '\0';
+	}
 
 	do {
 		ret = ioctl(fd1, SYNC_IOC_MERGE, &data);
