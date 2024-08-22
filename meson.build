@@ -243,6 +243,10 @@ if target_machine.endian() == 'big'
   config.set('HAVE_BIG_ENDIAN', 1)
 endif
 
+if android
+  config.set('BIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD', 1)
+endif
+
 config_file = configure_file(
   configuration : config,
   output : 'config.h',
