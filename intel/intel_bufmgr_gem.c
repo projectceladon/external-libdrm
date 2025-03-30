@@ -428,20 +428,23 @@ drm_intel_gem_dump_validation_list(drm_intel_bufmgr_gem *bufmgr_gem)
 			drm_intel_bo *target_bo = bo_gem->reloc_target_info[j].bo;
 			drm_intel_bo_gem *target_gem =
 			    (drm_intel_bo_gem *) target_bo;
-
-			DBG("%2d: %d %s(%s)@0x%08x %08x -> "
-			    "%d (%s)@0x%08x %08x + 0x%08x\n",
-			    i,
-			    bo_gem->gem_handle,
-			    bo_gem->kflags & EXEC_OBJECT_PINNED ? "*" : "",
-			    bo_gem->name,
-			    upper_32_bits(bo_gem->relocs[j].offset),
-			    lower_32_bits(bo_gem->relocs[j].offset),
-			    target_gem->gem_handle,
-			    target_gem->name,
-			    upper_32_bits(target_bo->offset64),
-			    lower_32_bits(target_bo->offset64),
-			    bo_gem->relocs[j].delta);
+                        if (bo_gem->relocs != NULL) {
+			    DBG("%2d: %d %s(%s)@0x%08x %08x -> "
+			        "%d (%s)@0x%08x %08x + 0x%08x\n",
+			        i,
+			        bo_gem->gem_handle,
+			        bo_gem->kflags & EXEC_OBJECT_PINNED ? "*" : "",
+			        bo_gem->name,
+			        upper_32_bits(bo_gem->relocs[j].offset),
+			        lower_32_bits(bo_gem->relocs[j].offset),
+			        target_gem->gem_handle,
+			        target_gem->name,
+			        upper_32_bits(target_bo->offset64),
+			        lower_32_bits(target_bo->offset64),
+			        bo_gem->relocs[j].delta);
+			} else {
+			    DBG("bo_gem->relocs is NULL for iteration number : %d", j);
+			}
 		}
 
 		for (j = 0; j < bo_gem->softpin_target_count; j++) {
@@ -623,12 +626,15 @@ drm_intel_gem_bo_madvise_internal(drm_intel_bufmgr_gem *bufmgr_gem,
 				  drm_intel_bo_gem *bo_gem, int state)
 {
 	struct drm_i915_gem_madvise madv;
+	int ret;
 
 	memclear(madv);
 	madv.handle = bo_gem->gem_handle;
 	madv.madv = state;
 	madv.retained = 1;
-	drmIoctl(bufmgr_gem->fd, DRM_IOCTL_I915_GEM_MADVISE, &madv);
+	ret = drmIoctl(bufmgr_gem->fd, DRM_IOCTL_I915_GEM_MADVISE, &madv);
+	if (ret < 0)
+	    return ret;
 
 	return madv.retained;
 }
@@ -976,7 +982,8 @@ has_userptr(drm_intel_bufmgr_gem *bufmgr_gem)
 
 	pgsz = sysconf(_SC_PAGESIZE);
 	assert(pgsz > 0);
-
+	if (pgsz < 0)
+		return false;
 	ret = posix_memalign(&ptr, pgsz, pgsz);
 	if (ret) {
 		DBG("Failed to get a page (%ld) for userptr detection!\n",
@@ -2075,15 +2082,16 @@ do_bo_emit_reloc(drm_intel_bo *bo, uint32_t offset,
 	else
 		bo_gem->reloc_target_info[bo_gem->reloc_count].flags = 0;
 
-	bo_gem->relocs[bo_gem->reloc_count].offset = offset;
-	bo_gem->relocs[bo_gem->reloc_count].delta = target_offset;
-	bo_gem->relocs[bo_gem->reloc_count].target_handle =
-	    target_bo_gem->gem_handle;
-	bo_gem->relocs[bo_gem->reloc_count].read_domains = read_domains;
-	bo_gem->relocs[bo_gem->reloc_count].write_domain = write_domain;
-	bo_gem->relocs[bo_gem->reloc_count].presumed_offset = target_bo->offset64;
-	bo_gem->reloc_count++;
-
+	if (bo_gem->relocs != NULL) {
+	    bo_gem->relocs[bo_gem->reloc_count].offset = offset;
+	    bo_gem->relocs[bo_gem->reloc_count].delta = target_offset;
+	    bo_gem->relocs[bo_gem->reloc_count].target_handle =
+	        target_bo_gem->gem_handle;
+	    bo_gem->relocs[bo_gem->reloc_count].read_domains = read_domains;
+	    bo_gem->relocs[bo_gem->reloc_count].write_domain = write_domain;
+	    bo_gem->relocs[bo_gem->reloc_count].presumed_offset = target_bo->offset64;
+	    bo_gem->reloc_count++;
+	}
 	return 0;
 }
 

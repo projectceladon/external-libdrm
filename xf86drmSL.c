@@ -182,6 +182,7 @@ drm_public int drmSLInsert(void *l, unsigned long key, void *value)
     }
 
     ++list->count;
+    free(entry);
     return 0;			/* Added to table */
 }
 

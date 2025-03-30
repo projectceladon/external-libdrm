@@ -882,7 +882,10 @@ static int drmOpenDevice(dev_t dev, int minor, int type)
             return DRM_ERR_NOT_ROOT;
         mkdir(DRM_DIR_NAME, DRM_DEV_DIRMODE);
         chown_check_return(DRM_DIR_NAME, 0, 0); /* root:root */
-        chmod(DRM_DIR_NAME, DRM_DEV_DIRMODE);
+        if (chmod(DRM_DIR_NAME, DRM_DEV_DIRMODE) != 0) {
+            // If chmod returns -1, an error occurred
+            return errno;
+        }
     }
 
     /* Check if the device node exists and create it if necessary. */
@@ -896,7 +899,8 @@ static int drmOpenDevice(dev_t dev, int minor, int type)
     if (drm_server_info && drm_server_info->get_perms) {
         group = ((int)serv_group >= 0) ? serv_group : DRM_DEV_GID;
         chown_check_return(buf, user, group);
-        chmod(buf, devmode);
+        if (chmod(buf, devmode) != 0)
+            return errno;
     }
 #else
     /* if we modprobed then wait for udev */
@@ -940,7 +944,8 @@ wait_for_udev:
         mknod(buf, S_IFCHR | devmode, dev);
         if (drm_server_info && drm_server_info->get_perms) {
             chown_check_return(buf, user, group);
-            chmod(buf, devmode);
+            if (chmod(buf, devmode) != 0)
+                return errno;
         }
     }
     fd = open(buf, O_RDWR | O_CLOEXEC);

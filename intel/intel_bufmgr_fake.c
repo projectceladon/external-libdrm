@@ -1170,9 +1170,11 @@ static int
 	assert(bo_fake->map_count == 0);
 
 	if (bo_fake->is_static) {
-		/* Add it to the needs-fence list */
-		bufmgr_fake->need_fence = 1;
-		return 0;
+	    /* Add it to the needs-fence list */
+	    pthread_mutex_lock(&bufmgr_fake->lock);
+	    bufmgr_fake->need_fence = 1;
+	    pthread_mutex_unlock(&bufmgr_fake->lock);
+            return 0;
 	}
 
 	/* Allocate the card memory */
@@ -1185,8 +1187,8 @@ static int
 
 	assert(bo_fake->block);
 	assert(bo_fake->block->bo == &bo_fake->bo);
-
-	bo->offset = bo_fake->block->mem->ofs;
+	if (!bo_fake->block)
+		bo->offset = bo_fake->block->mem->ofs;
 
 	/* Upload the buffer contents if necessary */
 	if (bo_fake->dirty) {
@@ -1359,7 +1361,8 @@ drm_intel_fake_reloc_and_validate_buffer(drm_intel_bo *bo)
 			if (bo->virtual == NULL)
 				drm_intel_fake_bo_map_locked(bo, 1);
 
-			*(uint32_t *) ((uint8_t *) bo->virtual + r->offset) =
+			if (bo->virtual != NULL)
+			    *(uint32_t *) ((uint8_t *) bo->virtual + r->offset) =
 			    reloc_data;
 
 			r->last_target_offset = r->target_buf->offset;
